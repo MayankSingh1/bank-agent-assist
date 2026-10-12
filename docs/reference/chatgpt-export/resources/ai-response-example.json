@@ -1,0 +1,9 @@
+{
+  "intent": "CARD_DISPUTE",
+  "transactionId": "txn_1007",
+  "summary": "Customer reports an unfamiliar charge.",
+  "evidenceIds": ["txn_1007", "policy_demo_03"],
+  "missingInformation": [],
+  "recommendedAction": "REVIEW_DISPUTE",
+  "requiresHumanApproval": true
+}
