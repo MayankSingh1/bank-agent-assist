@@ -6,13 +6,15 @@
 
 **One-line scope:** A web workspace for a bank support agent. When a call connects, it verifies the caller, briefs the agent, follows the conversation, matches the issue to the right transaction, recommends a policy-backed resolution with evidence, and executes actions only after the agent approves. Every step is audited and wrap-up notes are drafted automatically.
 
+**Issue types:** unrecognised charge, ending in a dispute or card block (**Must**, the hero scenario); failed transaction (**Should**); fee or billing query, ending in a fee waiver (**Should**). Each is a playbook: the facts to extract, eligibility rules, allowed actions and script lines.
+
 **Hero scenario:** A customer calls about a card charge they don't recognise. The call ends in a dispute case, or a card block if the account looks compromised.
 
 ---
 
 ## 1. Guardrails that apply to every feature
 
-1. **Gemini reads, code decides.** Gemini extracts facts, classifies intent and drafts text. Eligibility, allowed actions and anything touching money are decided by deterministic backend code.
+1. **Gemini reads, code decides.** Gemini extracts facts (merchant, amount, date), matches transactions and drafts text. Eligibility, allowed actions and anything touching money are decided by deterministic backend code.
 2. **Structured output only.** Every Gemini call returns JSON validated against a shared schema. If validation fails, the UI falls back to an "AI unsure" state.
 3. **Evidence or it didn't happen.** Every AI claim cites record IDs (transaction, policy clause, case). The backend drops any reference that doesn't exist.
 4. **The agent approves every action.** The backend checks the agent's identity, the caller's verification, the action allowlist and an idempotency key before executing.
@@ -43,8 +45,8 @@ IDs are stable so we can reference them in issues and PRs.
 | ID | Item |
 |---|---|
 | M-06 | Scripted call simulator: play/pause/step, agent and customer labelled, one script per scenario |
-| M-07 | Intent detection after each customer turn (structured output with confidence) |
-| M-08 | Transaction matching: Gemini ranks candidate transactions from what the customer says; the agent confirms the match |
+| M-07 | Issue type picked by the agent with one click (unrecognised charge / failed transaction / fee query). Gemini pre-selects it from the transcript, with no confidence score shown; the choice loads that issue's playbook. |
+| M-08 | Transaction matching: Gemini extracts merchant/amount/date from what the customer says; the backend finds matching transactions; the agent confirms the match |
 
 **Resolution**
 | ID | Item |
@@ -71,7 +73,7 @@ IDs are stable so we can reference them in issues and PRs.
 |---|---|---|
 | X-01 | Caller fails verification | Data stays restricted; guided recovery or escalation |
 | X-02 | Dispute already exists | Show the existing case; no duplicate is created |
-| X-03 | Ambiguous transaction (two similar charges) | AI flags low confidence; the agent picks; nothing proceeds automatically |
+| X-03 | Ambiguous transaction (two similar charges) | More than one transaction matches, so both are shown side by side; the agent picks; nothing proceeds automatically |
 | X-04 | Transaction ineligible | Explain the policy reason and offer the next allowed step |
 | X-05 | Possible account compromise | Prioritise card block + escalation over dispute |
 | X-06 | Gemini error, timeout or invalid JSON | "AI unsure" state with manual policy lookup; the call continues |
@@ -100,14 +102,16 @@ IDs are stable so we can reference them in issues and PRs.
 | S-07 | "Ask the copilot" free-text question, answered only from policy and customer data |
 | S-08 | Agent accept/reject feedback on each suggestion (feeds S-03) |
 | S-09 | "Likely reason for call" predicted before the customer speaks |
+| S-10 | **Failed-transaction playbook:** debited but the merchant says unpaid. Check settlement status, explain the reversal timeline, raise a reversal/trace request (simulated). Adds a scripted call D. |
+| S-11 | **Fee-waiver playbook:** fee or billing query. Explain the fee from transaction data; waiver eligibility decided in code (e.g. first waiver in 12 months, under a set amount); waive-fee action (simulated). Adds a scripted call E. |
 
 ### COULD: stretch goals
 
 | ID | Item |
 |---|---|
-| C-01 | More issue types: failed transaction, fee waiver, limit increase (one playbook each) |
+| C-01 | More issue types, e.g. limit increase (one playbook each) |
 | C-02 | Sentiment / frustration indicator |
-| C-03 | Multiple intents in one call |
+| C-03 | Multiple issues in one call (e.g. a dispute, then a fee question) |
 | C-04 | Outcome analytics in BigQuery (Firestore export) |
 | C-05 | Policy grounding at scale via Vertex AI Search |
 | C-06 | Scripted-call audio generated with Text-to-Speech |
@@ -133,7 +137,7 @@ Real telephony, real bank systems, real money movement, autonomous actions witho
 | M-01 caller verification (simple form) | M-02 real sign-in (stub agent `demo-agent`) |
 | M-03 briefing data, M-04 Gemini summary | M-05 risk flags |
 | M-06 scripted simulator (scenario A only) | Scenarios B and C |
-| M-07 intent, M-08 transaction match | |
+| M-07 issue type (unrecognised charge only), M-08 transaction match | |
 | M-09 evidence refs + backend check | |
 | M-10 eligibility engine (one policy) | |
 | M-11 dispute form, M-12 approval, M-13 create dispute | M-14 block card |
@@ -156,7 +160,7 @@ SHOULD items in order of demo value: S-02 timed comparison → S-04 masking → 
 
 | Service | Used for | Features | Bucket |
 |---|---|---|---|
-| **Gemini on Vertex AI** (`@google/genai`) | Briefing, intent, transaction match, recommendation, wrap-up, all with JSON schema output. Model set via `GEMINI_MODEL`: a Flash-class model for per-turn calls (latency), optionally Pro-class for briefing/wrap-up. | M-04, M-07, M-08, M-09, M-16 | Must |
+| **Gemini on Vertex AI** (`@google/genai`) | Briefing, fact extraction and transaction match, issue-type pre-selection, recommendation, wrap-up, all with JSON schema output. Model set via `GEMINI_MODEL`: a Flash-class model for per-turn calls (latency), optionally Pro-class for briefing/wrap-up. | M-04, M-07, M-08, M-09, M-16 | Must |
 | **Google AI Studio** | Prototyping and tuning prompts and schemas before wiring them in | All AI features | Must (dev tool) |
 | **Cloud Firestore** | Customers, cards, transactions, cases, policies, call sessions, audit events | D-01, M-03, M-13, M-15 | Must |
 | **Firebase Authentication** | Agent sign-in; the API verifies ID tokens | M-02, M-15 | Must |
@@ -191,7 +195,7 @@ bank-agent-assist/
 │   │       │   ├── IncomingCallPanel.tsx      M-01 verification
 │   │       │   ├── BriefingPanel.tsx          M-03..05
 │   │       │   ├── TranscriptPanel.tsx        M-06
-│   │       │   ├── CopilotPanel.tsx           M-07..09 intent, match, recommendation
+│   │       │   ├── CopilotPanel.tsx           M-07..09 issue type, match, recommendation
 │   │       │   ├── DisputeForm.tsx            M-11
 │   │       │   ├── ApprovalDialog.tsx         M-12
 │   │       │   ├── WrapUpPanel.tsx            M-16
@@ -234,7 +238,7 @@ bank-agent-assist/
 | `POST /api/calls` | Start a call session for a caller ID | M-01 |
 | `POST /api/calls/:id/verify` | Verify the caller; unlocks customer data | M-01, X-01 |
 | `GET /api/calls/:id/briefing` | Profile, transactions, cases, flags + AI summary | M-03..05 |
-| `POST /api/calls/:id/turns` | Append a transcript turn → intent + transaction candidates | M-06..08 |
+| `POST /api/calls/:id/turns` | Append a transcript turn → extracted facts, matching transactions, suggested issue type | M-06..08 |
 | `POST /api/calls/:id/recommendation` | Recommendation + eligibility + evidence (validated) | M-09, M-10 |
 | `POST /api/disputes/preview` | Pre-filled, validated dispute draft | M-11 |
 | `POST /api/disputes` | Approved create, with idempotency key | M-12, M-13, X-02 |
