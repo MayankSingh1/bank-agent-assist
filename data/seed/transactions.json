@@ -1,0 +1,17 @@
+[
+  { "id": "txn_1061", "cardId": "card_4242", "merchant": "HARBOR COFFEE CO", "category": "Cafe", "amount": 5.8, "daysAgo": 0, "status": "pending", "channel": "in_store" },
+  { "id": "txn_1058", "cardId": "card_4242", "merchant": "GREENLEAF GROCERS", "category": "Groceries", "amount": 54.2, "daysAgo": 2, "status": "posted", "channel": "in_store" },
+  { "id": "txn_1055", "cardId": "card_4242", "merchant": "CITY TRANSIT", "category": "Transport", "amount": 2.75, "daysAgo": 3, "status": "posted", "channel": "in_store" },
+  { "id": "txn_1051", "cardId": "card_4242", "merchant": "SPARK FUEL 112", "category": "Fuel", "amount": 48.1, "daysAgo": 6, "status": "posted", "channel": "in_store" },
+  { "id": "txn_1042", "cardId": "card_4242", "merchant": "NOVA DIGITAL*PREMIUM", "category": "Digital subscription", "amount": 129.0, "daysAgo": 9, "status": "posted", "channel": "online" },
+  { "id": "txn_1038", "cardId": "card_4242", "merchant": "PAGEWISE BOOKS", "category": "Books", "amount": 23.99, "daysAgo": 12, "status": "posted", "channel": "online" },
+  { "id": "txn_1033", "cardId": "card_4242", "merchant": "METRO PHARMACY", "category": "Health", "amount": 18.45, "daysAgo": 15, "status": "posted", "channel": "in_store" },
+  { "id": "txn_1029", "cardId": "card_4242", "merchant": "PAYMENT - THANK YOU", "category": "Payment", "amount": -420.0, "daysAgo": 20, "status": "posted", "channel": "online" },
+  { "id": "txn_1024", "cardId": "card_4242", "merchant": "GREENLEAF GROCERS", "category": "Groceries", "amount": 61.35, "daysAgo": 23, "status": "posted", "channel": "in_store" },
+  { "id": "txn_1020", "cardId": "card_4242", "merchant": "STARLIGHT CINEMAS", "category": "Entertainment", "amount": 31.0, "daysAgo": 26, "status": "posted", "channel": "in_store" },
+  { "id": "txn_1017", "cardId": "card_4242", "merchant": "NOVA DIGITAL*BASIC", "category": "Digital subscription", "amount": 12.99, "daysAgo": 28, "status": "posted", "channel": "online" },
+  { "id": "txn_1012", "cardId": "card_4242", "merchant": "LUMEN ELECTRIC", "category": "Utilities", "amount": 96.3, "daysAgo": 34, "status": "posted", "channel": "online" },
+  { "id": "txn_1008", "cardId": "card_4242", "merchant": "HARBOR COFFEE CO", "category": "Cafe", "amount": 6.4, "daysAgo": 41, "status": "posted", "channel": "in_store" },
+  { "id": "txn_1004", "cardId": "card_4242", "merchant": "SPARK FUEL 112", "category": "Fuel", "amount": 44.7, "daysAgo": 49, "status": "posted", "channel": "in_store" },
+  { "id": "txn_1001", "cardId": "card_4242", "merchant": "NOVA DIGITAL*BASIC", "category": "Digital subscription", "amount": 12.99, "daysAgo": 58, "status": "posted", "channel": "online" }
+]

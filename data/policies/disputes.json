@@ -1,0 +1,15 @@
+{
+  "id": "DSP-1",
+  "title": "Unrecognised card transaction",
+  "version": "demo-2026.1",
+  "fictional": true,
+  "windowDays": 60,
+  "clauses": [
+    { "id": "DSP-1.1", "text": "A dispute can only be raised for a posted transaction. Pending transactions must post first." },
+    { "id": "DSP-1.2", "text": "The cardholder must report the transaction within 60 days of its posting date." },
+    { "id": "DSP-1.3", "text": "Only one open dispute may exist per transaction. If one exists, share its status instead of opening another." },
+    { "id": "DSP-1.4", "text": "Before raising a dispute, confirm with the cardholder that they did not make or authorise the transaction." },
+    { "id": "DSP-1.5", "text": "When a dispute is raised, give the cardholder the case reference and explain that a provisional credit decision is made within 10 business days and the investigation can take up to 90 days." },
+    { "id": "DSP-1.6", "text": "Ask whether the card is still in the cardholder's possession. If not, or if other unknown charges exist, treat the card as compromised and escalate to the fraud team." }
+  ]
+}

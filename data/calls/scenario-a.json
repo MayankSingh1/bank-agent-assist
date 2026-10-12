@@ -1,0 +1,16 @@
+{
+  "id": "scenario-a",
+  "title": "Unrecognised charge",
+  "summary": "Customer reports a charge she doesn't recognise. Ends in a dispute case.",
+  "customerId": "cus_maya",
+  "callerPhone": "+1 (415) 555-0142",
+  "verification": { "dob": "1990-04-14", "last4": "4242" },
+  "turns": [
+    { "speaker": "agent", "text": "Thank you for calling Everyday Bank, this is Sam. How can I help you today?" },
+    { "speaker": "customer", "text": "Hi Sam. There's a charge on my card that I don't recognise." },
+    { "speaker": "agent", "text": "I can help with that. Can you tell me a bit about the charge?" },
+    { "speaker": "customer", "text": "It's about a hundred and thirty dollars, from something called Nova Digital. Last week, I think." },
+    { "speaker": "agent", "text": "Did you sign up for anything new with them recently?" },
+    { "speaker": "customer", "text": "No, never. I only have their basic plan, and that's like thirteen dollars a month. I still have my card with me." }
+  ]
+}
