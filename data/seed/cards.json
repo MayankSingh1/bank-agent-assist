@@ -1,0 +1,12 @@
+[
+  {
+    "id": "card_4242",
+    "customerId": "cus_maya",
+    "product": "Everyday Rewards Credit Card",
+    "last4": "4242",
+    "status": "active",
+    "creditLimit": 8000,
+    "balance": 1243.18,
+    "currency": "USD"
+  }
+]

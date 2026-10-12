@@ -329,6 +329,8 @@ SHOULD items in order of demo value: S-02 timed comparison → S-04 masking → 
 
 ## 12. Starter repo structure
 
+> **As built in M0:** the API runs as Next.js route handlers inside `apps/web` instead of a separate `apps/api` Express service, and the shared schemas, rules and AI code live in `packages/core`. See [M0.md §7](M0.md#7-code-map-as-built). Splitting the API out later only moves the route files.
+
 TypeScript everywhere, npm workspaces. Shared [Zod](https://zod.dev) schemas are the single source of truth for Gemini response formats *and* API request validation.
 
 ```

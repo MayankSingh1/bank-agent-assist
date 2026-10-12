@@ -1,0 +1,12 @@
+[
+  {
+    "id": "cus_maya",
+    "name": "Maya Chen",
+    "dob": "1990-04-14",
+    "phone": "+1 (415) 555-0142",
+    "email": "maya.chen@example.com",
+    "customerSince": "2019-03-02",
+    "segment": "Everyday Rewards",
+    "city": "San Francisco, CA"
+  }
+]
