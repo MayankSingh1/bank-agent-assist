@@ -27,7 +27,8 @@ export function buildEvidenceIndex(ctx: {
     add({ id: t.id, kind: "transaction", label: `${money(t.amount)} ${t.merchant}, ${t.date} (${t.status})` });
   for (const c of ctx.cases) add({ id: c.id, kind: "case", label: `Case ${c.reference} (${c.status})` });
   for (const p of ctx.policies)
-    for (const clause of p.clauses) add({ id: clause.id, kind: "policy", label: `Policy ${clause.id}: ${clause.text}` });
+    for (const clause of p.clauses)
+      add({ id: clause.id, kind: "policy", label: `Policy ${clause.id}: ${clause.text}` });
 
   return index;
 }
@@ -36,7 +37,10 @@ export function buildEvidenceIndex(ctx: {
  * Drops any evidence ID that doesn't exist for this call. Returns how many were
  * removed so the UI and audit log can show it.
  */
-export function verifyEvidence<T extends EvidencedText>(items: T[], index: EvidenceIndex): { items: T[]; dropped: string[] } {
+export function verifyEvidence<T extends EvidencedText>(
+  items: T[],
+  index: EvidenceIndex,
+): { items: T[]; dropped: string[] } {
   const dropped: string[] = [];
   const cleaned = items.map((item) => {
     const kept = [...new Set(item.evidenceIds)].filter((id) => {

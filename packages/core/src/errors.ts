@@ -1,11 +1,5 @@
 export type ErrorCode =
-  | "bad_request"
-  | "not_found"
-  | "not_verified"
-  | "verification_locked"
-  | "not_eligible"
-  | "duplicate_case"
-  | "conflict";
+  "bad_request" | "not_found" | "not_verified" | "verification_locked" | "not_eligible" | "duplicate_case" | "conflict";
 
 const STATUS: Record<ErrorCode, number> = {
   bad_request: 400,

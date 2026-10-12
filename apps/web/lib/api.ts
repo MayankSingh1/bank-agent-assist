@@ -43,9 +43,11 @@ async function request<T>(path: string, init?: { method?: string; body?: unknown
 }
 
 export const api = {
-  scenarios: () => request<{ scenarios: ScenarioSummary[]; ai: { provider: string; model: string | null } }>("/scenarios"),
+  scenarios: () =>
+    request<{ scenarios: ScenarioSummary[]; ai: { provider: string; model: string | null } }>("/scenarios"),
   startCall: (scenarioId: string) => request<CallStarted>("/calls", { body: { scenarioId } }),
-  verify: (callId: string, body: { dob: string; last4: string }) => request<VerifyResult>(`/calls/${callId}/verify`, { body }),
+  verify: (callId: string, body: { dob: string; last4: string }) =>
+    request<VerifyResult>(`/calls/${callId}/verify`, { body }),
   context: (callId: string) => request<CallContext>(`/calls/${callId}/context`),
   briefing: (callId: string) => request<AiResult<BriefingSummary>>(`/calls/${callId}/briefing`),
   turn: (callId: string, turn: ScriptTurn) => request<TurnResult>(`/calls/${callId}/turns`, { body: turn }),
@@ -54,7 +56,8 @@ export const api = {
   createDispute: (body: { callId: string; idempotencyKey: string; form: DisputeForm }) =>
     request<DisputeCreated>("/disputes", { body }),
   wrapUpDraft: (callId: string) => request<AiResult<WrapUp>>(`/calls/${callId}/wrap-up`),
-  saveWrapUp: (callId: string, notes: string) => request<{ endedAt: string }>(`/calls/${callId}/wrap-up`, { body: { notes } }),
+  saveWrapUp: (callId: string, notes: string) =>
+    request<{ endedAt: string }>(`/calls/${callId}/wrap-up`, { body: { notes } }),
   audit: (callId: string) => request<{ events: AuditEvent[]; evidence: EvidenceRef[] }>(`/calls/${callId}/audit`),
   reset: () => request<{ ok: true }>("/demo/reset", { method: "POST" }),
 };

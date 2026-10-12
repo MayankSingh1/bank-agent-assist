@@ -18,7 +18,10 @@ export class MockProvider implements AiProvider {
 
     highlights.push(
       open.length
-        ? { text: `${open.length} open dispute case${open.length === 1 ? "" : "s"} on file`, evidenceIds: open.map((c) => c.id) }
+        ? {
+            text: `${open.length} open dispute case${open.length === 1 ? "" : "s"} on file`,
+            evidenceIds: open.map((c) => c.id),
+          }
         : { text: `Card •• ${card.last4} is ${card.status}, no open cases`, evidenceIds: [card.id] },
     );
 
@@ -73,13 +76,25 @@ export class MockProvider implements AiProvider {
         steps: [
           { text: `Don't raise a new dispute. ${failed.detail}.`, evidenceIds: [failed.clauseId, t.id] },
           eligibility.existingCase
-            ? { text: `Share the status of case ${eligibility.existingCase.reference} with the customer.`, evidenceIds: [eligibility.existingCase.id, "DSP-1.3"] }
-            : { text: "Explain the reason and offer to escalate to a team lead if the customer disagrees.", evidenceIds: [failed.clauseId] },
+            ? {
+                text: `Share the status of case ${eligibility.existingCase.reference} with the customer.`,
+                evidenceIds: [eligibility.existingCase.id, "DSP-1.3"],
+              }
+            : {
+                text: "Explain the reason and offer to escalate to a team lead if the customer disagrees.",
+                evidenceIds: [failed.clauseId],
+              },
         ],
         scriptLines: [
           eligibility.existingCase
-            ? { text: `I can see we already have an open dispute for this charge, reference ${eligibility.existingCase.reference}. It's being investigated, so there's nothing more you need to do right now.`, evidenceIds: [eligibility.existingCase.id] }
-            : { text: `I'm not able to raise a dispute for this charge yet. ${failed.detail}.`, evidenceIds: [failed.clauseId] },
+            ? {
+                text: `I can see we already have an open dispute for this charge, reference ${eligibility.existingCase.reference}. It's being investigated, so there's nothing more you need to do right now.`,
+                evidenceIds: [eligibility.existingCase.id],
+              }
+            : {
+                text: `I'm not able to raise a dispute for this charge yet. ${failed.detail}.`,
+                evidenceIds: [failed.clauseId],
+              },
         ],
         formPrefill: { reason: "other", customerStatement: "" },
       };
@@ -87,14 +102,29 @@ export class MockProvider implements AiProvider {
 
     return {
       steps: [
-        { text: `Confirm the customer did not make or authorise the ${usd(t.amount)} ${t.merchant} charge.`, evidenceIds: ["DSP-1.4", t.id] },
-        { text: "Confirm the card is still in the customer's possession and there are no other unknown charges.", evidenceIds: ["DSP-1.6"] },
-        { text: "Review the pre-filled dispute form and submit it for approval.", evidenceIds: ["DSP-1.1", "DSP-1.2", "DSP-1.3"] },
+        {
+          text: `Confirm the customer did not make or authorise the ${usd(t.amount)} ${t.merchant} charge.`,
+          evidenceIds: ["DSP-1.4", t.id],
+        },
+        {
+          text: "Confirm the card is still in the customer's possession and there are no other unknown charges.",
+          evidenceIds: ["DSP-1.6"],
+        },
+        {
+          text: "Review the pre-filled dispute form and submit it for approval.",
+          evidenceIds: ["DSP-1.1", "DSP-1.2", "DSP-1.3"],
+        },
         { text: "Give the customer the case reference and explain the timelines.", evidenceIds: ["DSP-1.5"] },
       ],
       scriptLines: [
-        { text: `I can see the ${usd(t.amount)} charge from ${merchantBase(t.merchant)} on ${t.date}. Just to confirm, you didn't make or authorise this purchase?`, evidenceIds: [t.id, "DSP-1.4"] },
-        { text: "I'll raise a dispute for you now. You'll hear about a provisional credit within 10 business days, and the full investigation can take up to 90 days.", evidenceIds: ["DSP-1.5"] },
+        {
+          text: `I can see the ${usd(t.amount)} charge from ${merchantBase(t.merchant)} on ${t.date}. Just to confirm, you didn't make or authorise this purchase?`,
+          evidenceIds: [t.id, "DSP-1.4"],
+        },
+        {
+          text: "I'll raise a dispute for you now. You'll hear about a provisional credit within 10 business days, and the full investigation can take up to 90 days.",
+          evidenceIds: ["DSP-1.5"],
+        },
       ],
       formPrefill: {
         reason: input.facts?.customerRecognises === false ? "not_authorised" : "not_recognised",
@@ -107,13 +137,19 @@ export class MockProvider implements AiProvider {
     const { customer, card, transaction: t, createdCase, eligibility } = input;
     const lines = [
       `Customer ${customer.name} called about card •• ${card.last4}. Identity verified (DOB + last 4).`,
-      t ? `Reported an unrecognised charge: ${usd(t.amount)} ${t.merchant} on ${t.date} (${t.id}).` : "Issue not confirmed during the call.",
+      t
+        ? `Reported an unrecognised charge: ${usd(t.amount)} ${t.merchant} on ${t.date} (${t.id}).`
+        : "Issue not confirmed during the call.",
     ];
     if (createdCase) {
-      lines.push(`Dispute ${createdCase.reference} raised (reason: ${createdCase.reason.replace("_", " ")}). Card remains with customer.`);
+      lines.push(
+        `Dispute ${createdCase.reference} raised (reason: ${createdCase.reason.replace("_", " ")}). Card remains with customer.`,
+      );
       lines.push("Customer told: provisional credit decision within 10 business days, investigation up to 90 days.");
     } else if (eligibility?.existingCase) {
-      lines.push(`Existing case ${eligibility.existingCase.reference} already open; status shared, no new case raised.`);
+      lines.push(
+        `Existing case ${eligibility.existingCase.reference} already open; status shared, no new case raised.`,
+      );
     } else {
       lines.push("No action taken.");
     }
@@ -147,7 +183,17 @@ function recurringCharges(transactions: Transaction[]): Transaction[][] {
   return [...groups.values()].filter((g) => g.length >= 2 && g[0]!.category.includes("subscription"));
 }
 
-const KNOWN_MERCHANTS = ["nova digital", "harbor coffee", "greenleaf grocers", "city transit", "spark fuel", "pagewise books", "metro pharmacy", "starlight cinemas", "lumen electric"];
+const KNOWN_MERCHANTS = [
+  "nova digital",
+  "harbor coffee",
+  "greenleaf grocers",
+  "city transit",
+  "spark fuel",
+  "pagewise books",
+  "metro pharmacy",
+  "starlight cinemas",
+  "lumen electric",
+];
 
 function findMerchant(text: string): string | null {
   const normalised = normaliseMerchant(text);
@@ -156,27 +202,66 @@ function findMerchant(text: string): string | null {
 }
 
 const UNITS: Record<string, number> = {
-  zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
-  eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19,
+  zero: 0,
+  one: 1,
+  two: 2,
+  three: 3,
+  four: 4,
+  five: 5,
+  six: 6,
+  seven: 7,
+  eight: 8,
+  nine: 9,
+  ten: 10,
+  eleven: 11,
+  twelve: 12,
+  thirteen: 13,
+  fourteen: 14,
+  fifteen: 15,
+  sixteen: 16,
+  seventeen: 17,
+  eighteen: 18,
+  nineteen: 19,
 };
-const TENS: Record<string, number> = { twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90 };
+const TENS: Record<string, number> = {
+  twenty: 20,
+  thirty: 30,
+  forty: 40,
+  fifty: 50,
+  sixty: 60,
+  seventy: 70,
+  eighty: 80,
+  ninety: 90,
+};
 
 /** "$129", "129.00", "a hundred and thirty dollars" → number. */
 export function findAmount(line: string): number | null {
   const digits = line.match(/\$\s?(\d+(?:\.\d{1,2})?)|(\d+(?:\.\d{1,2})?)\s?(?:dollars|bucks)/i);
   if (digits) return Number(digits[1] ?? digits[2]);
 
-  const words = line.toLowerCase().replace(/[^a-z\s-]/g, " ").split(/[\s-]+/);
+  const words = line
+    .toLowerCase()
+    .replace(/[^a-z\s-]/g, " ")
+    .split(/[\s-]+/);
   let total = 0;
   let current = 0;
   let seen = false;
   for (let i = 0; i < words.length; i++) {
     const w = words[i]!;
-    if (w in UNITS) { current += UNITS[w]!; seen = true; }
-    else if (w in TENS) { current += TENS[w]!; seen = true; }
-    else if (w === "hundred") { current = (current || 1) * 100; seen = true; }
-    else if (w === "thousand") { total += (current || 1) * 1000; current = 0; seen = true; }
-    else if (w === "a" && (words[i + 1] === "hundred" || words[i + 1] === "thousand")) continue;
+    if (w in UNITS) {
+      current += UNITS[w]!;
+      seen = true;
+    } else if (w in TENS) {
+      current += TENS[w]!;
+      seen = true;
+    } else if (w === "hundred") {
+      current = (current || 1) * 100;
+      seen = true;
+    } else if (w === "thousand") {
+      total += (current || 1) * 1000;
+      current = 0;
+      seen = true;
+    } else if (w === "a" && (words[i + 1] === "hundred" || words[i + 1] === "thousand")) continue;
     else if (w === "and" && seen) continue;
     else if (seen) break;
   }
@@ -196,7 +281,8 @@ function findDaysAgo(text: string): number | null {
 
 function findIssueType(text: string): IssueType {
   if (/recogni[sz]e|didn'?t make|not mine|unknown charge/.test(text)) return "unrecognised_charge";
-  if (/failed|declined|didn'?t go through|merchant says.*(not|never) (paid|received)/.test(text)) return "failed_transaction";
+  if (/failed|declined|didn'?t go through|merchant says.*(not|never) (paid|received)/.test(text))
+    return "failed_transaction";
   if (/\bfees?\b|late fee|annual fee|interest/.test(text)) return "fee_query";
   return "unknown";
 }

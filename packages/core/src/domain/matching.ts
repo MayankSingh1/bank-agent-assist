@@ -19,7 +19,9 @@ export function normaliseMerchant(name: string): string {
 
 function merchantMatches(spoken: string, merchant: string): boolean {
   const target = normaliseMerchant(merchant);
-  const words = normaliseMerchant(spoken).split(" ").filter((w) => w.length > 1);
+  const words = normaliseMerchant(spoken)
+    .split(" ")
+    .filter((w) => w.length > 1);
   return words.length > 0 && words.every((w) => target.includes(w));
 }
 

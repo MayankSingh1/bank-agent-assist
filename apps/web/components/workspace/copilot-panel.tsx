@@ -5,9 +5,7 @@ import {
   ArrowRight,
   CircleAlert,
   CircleCheck,
-  CircleX,
   FolderOpen,
-  Loader2,
   MessageSquareQuote,
   PhoneOff,
   ShieldCheck,
@@ -17,7 +15,15 @@ import type { DisputeForm, DisputeReason, Transaction } from "@baa/core";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -26,12 +32,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { CallFlow } from "@/lib/use-call-flow";
 import { cn, usd } from "@/lib/utils";
 import { EvidenceChips, useEvidence } from "./evidence";
+import { AiLabel, Amount, CheckIcon, Eyebrow, TransactionSummary } from "./kit";
 
 const ISSUE_TYPES = [
   { id: "unrecognised_charge", label: "Unrecognised charge", available: true },
@@ -40,14 +52,17 @@ const ISSUE_TYPES = [
 ] as const;
 
 const REASONS: { id: DisputeReason; label: string }[] = [
-  { id: "not_authorised", label: "Customer didn't authorise it" },
-  { id: "not_recognised", label: "Customer doesn't recognise it" },
-  { id: "amount_differs", label: "Amount is different from agreed" },
+  { id: "not_authorised", label: "Customer didn’t authorise it" },
+  { id: "not_recognised", label: "Customer doesn’t recognise it" },
+  { id: "amount_differs", label: "Amount differs from what was agreed" },
   { id: "other", label: "Other" },
 ];
 
+/** Selected state for segmented controls: solid, so the choice reads at a glance. */
+const SEGMENT_ON = "data-[state=on]:bg-primary data-[state=on]:text-primary-foreground";
+
 export function CopilotPanel({ flow }: { flow: CallFlow }) {
-  const { stage, context, matches, selectedTxnId, confirmed, scriptDone, extractError, transcript } = flow;
+  const { stage, context, selectedTxnId, confirmed, scriptDone, extractError, transcript } = flow;
   const latest = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -55,39 +70,36 @@ export function CopilotPanel({ flow }: { flow: CallFlow }) {
   }, [stage, flow.createdCase?.id]);
 
   if (!flow.verified)
-    return <Empty icon={ShieldCheck} text="The co-pilot starts once the caller is verified." />;
+    return (
+      <PanelEmpty
+        icon={ShieldCheck}
+        title="Co-pilot on standby"
+        text="The co-pilot unlocks once the caller is verified. Account data stays masked until then."
+      />
+    );
   if (transcript.length === 0)
-    return <Empty icon={Sparkles} text="Play the call. The co-pilot listens and finds the transaction the customer describes." />;
+    return (
+      <PanelEmpty
+        icon={Sparkles}
+        title="Ready to listen"
+        text="Play the call. The co-pilot follows the conversation and finds the transaction the customer describes."
+      />
+    );
 
   const selected = context?.transactions.find((t) => t.id === selectedTxnId) ?? null;
   const waitingForMatch = !selected && !scriptDone && !extractError;
 
   return (
     <div className="space-y-4">
-      {/* Step: identify the issue and the transaction */}
       {!confirmed ? (
         <div ref={stage === "confirm" ? latest : undefined} className="space-y-4">
           <IssueTypeCard />
-          {waitingForMatch ? (
-            <Card className="gap-3">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-1.5 text-sm">
-                  <Sparkles className="size-4 animate-pulse text-ai" /> Listening for the transaction…
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Skeleton className="h-12 w-full" />
-              </CardContent>
-            </Card>
-          ) : (
-            <MatchCard flow={flow} selected={selected} />
-          )}
+          {waitingForMatch ? <ListeningCard /> : <MatchCard flow={flow} selected={selected} />}
         </div>
       ) : (
         <ConfirmedSummary flow={flow} />
       )}
 
-      {/* Step: eligibility, recommendation, form, approval */}
       {confirmed && (
         <div ref={stage === "act" ? latest : undefined} className="space-y-4">
           <EligibilityCard flow={flow} />
@@ -106,10 +118,14 @@ export function CopilotPanel({ flow }: { flow: CallFlow }) {
         </div>
       )}
 
-      {/* Step: wrap-up */}
       {flow.wrapUpRequested && (
         <div ref={stage === "wrapup" || stage === "done" ? latest : undefined}>
-          {flow.ended ? <DoneCard flow={flow} /> : <WrapUpCard flow={flow} />}
+          {flow.ended ? (
+            <DoneCard flow={flow} />
+          ) : (
+            // Remount once the draft arrives so the editor starts from it.
+            <WrapUpCard key={flow.wrapUp ? "draft" : "loading"} flow={flow} />
+          )}
         </div>
       )}
     </div>
@@ -118,54 +134,76 @@ export function CopilotPanel({ flow }: { flow: CallFlow }) {
 
 // ---------------------------------------------------------------------------
 
-function Empty({ icon: Icon, text }: { icon: React.ComponentType<{ className?: string }>; text: string }) {
+function PanelEmpty({ icon: Icon, title, text }: { icon: React.ComponentType; title: string; text: string }) {
   return (
-    <div className="flex h-full min-h-60 flex-col items-center justify-center gap-3 rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-      <Icon className="size-6" />
-      <p className="max-w-60">{text}</p>
-    </div>
+    <Empty className="h-full min-h-72 border border-dashed bg-background/50 md:p-8">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <Icon />
+        </EmptyMedia>
+        <EmptyTitle className="text-base">{title}</EmptyTitle>
+        <EmptyDescription>{text}</EmptyDescription>
+      </EmptyHeader>
+    </Empty>
   );
 }
 
 function IssueTypeCard() {
   return (
-    <Card className="gap-3">
+    <Card>
       <CardHeader>
-        <CardTitle className="text-sm">Issue type</CardTitle>
-        <CardDescription className="text-xs">Pre-selected from the conversation. Change it if it's wrong.</CardDescription>
+        <CardTitle>Issue type</CardTitle>
+        <CardDescription>Pre-selected from the conversation. Change it if it’s wrong.</CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-wrap gap-1.5">
-        {ISSUE_TYPES.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            disabled={!t.available}
-            className={cn(
-              "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
-              t.available ? "border-primary bg-primary text-primary-foreground" : "cursor-not-allowed text-muted-foreground/60",
-            )}
-            title={t.available ? undefined : "Coming after M0"}
-          >
-            {t.label}
-            {!t.available && <span className="ml-1 text-[10px]">· soon</span>}
-          </button>
-        ))}
+      <CardContent>
+        <ToggleGroup
+          type="single"
+          value="unrecognised_charge"
+          variant="outline"
+          size="sm"
+          spacing={1.5}
+          className="flex-wrap"
+        >
+          {ISSUE_TYPES.map((t) =>
+            t.available ? (
+              <ToggleGroupItem key={t.id} value={t.id} className={cn("rounded-full", SEGMENT_ON)}>
+                {t.label}
+              </ToggleGroupItem>
+            ) : (
+              <Tooltip key={t.id}>
+                <TooltipTrigger asChild>
+                  <span
+                    tabIndex={0}
+                    className="rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                  >
+                    <ToggleGroupItem value={t.id} disabled className="rounded-full">
+                      {t.label}
+                    </ToggleGroupItem>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>Playbook coming after M0</TooltipContent>
+              </Tooltip>
+            ),
+          )}
+        </ToggleGroup>
       </CardContent>
     </Card>
   );
 }
 
-function TransactionSummary({ t }: { t: Transaction }) {
+function ListeningCard() {
   return (
-    <div className="flex items-start justify-between gap-3">
-      <div className="min-w-0">
-        <div className="truncate font-medium">{t.merchant}</div>
-        <div className="text-xs text-muted-foreground">
-          {t.date} · {t.daysAgo} days ago · {t.channel === "online" ? "Online" : "In store"} · {t.status}
-        </div>
-      </div>
-      <div className="font-mono text-base font-semibold tabular-nums">{usd(t.amount)}</div>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          <AiLabel className="animate-pulse text-sm font-semibold">Listening for the transaction…</AiLabel>
+        </CardTitle>
+        <CardDescription>Matches appear as soon as the customer mentions a merchant, amount or date.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-14 w-full rounded-lg" />
+      </CardContent>
+    </Card>
   );
 }
 
@@ -175,44 +213,58 @@ function MatchCard({ flow, selected }: { flow: CallFlow; selected: Transaction |
   const { highlight } = useEvidence();
 
   return (
-    <Card className="gap-4">
+    <Card>
       <CardHeader>
-        <CardTitle className="text-sm">Transaction the customer means</CardTitle>
-        <CardDescription className="text-xs">
-          {match ? "Matched from what the customer said. Confirm it with them." : "Select the transaction from the list on the left."}
+        <CardTitle>Transaction the customer means</CardTitle>
+        <CardDescription>
+          {match
+            ? "Matched from what the customer said. Confirm it with them."
+            : "Select the transaction from the list on the left."}
         </CardDescription>
+        {match && (
+          <CardAction>
+            <Badge variant="ai">
+              <Sparkles /> Matched
+            </Badge>
+          </CardAction>
+        )}
       </CardHeader>
       <CardContent className="space-y-3">
         {flow.extractError && flow.matches.length === 0 && (
           <Alert variant="warning">
             <CircleAlert />
-            <AlertTitle>AI couldn't match a transaction</AlertTitle>
-            <AlertDescription>Ask the customer for the merchant and amount, then pick it from the list.</AlertDescription>
+            <AlertTitle>AI couldn’t match a transaction</AlertTitle>
+            <AlertDescription>
+              Ask the customer for the merchant and amount, then pick it from the list.
+            </AlertDescription>
           </Alert>
         )}
         {selected ? (
           <div
-            className="rounded-lg border border-primary/30 bg-primary/[0.03] p-3"
+            className="rounded-lg border bg-surface p-3"
             onMouseEnter={() => highlight(selected.id)}
             onMouseLeave={() => highlight(null)}
           >
             <TransactionSummary t={selected} />
-            {match && (
-              <div className="mt-2 flex flex-wrap gap-1">
+            {match && match.reasons.length > 0 && (
+              <ul className="mt-3 flex flex-wrap gap-1.5 border-t pt-3">
                 {match.reasons.map((r) => (
-                  <Badge key={r} variant="ai" className="text-[11px]">
+                  <li key={r} className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <CircleCheck className="size-3.5 text-ai" />
                     {r}
-                  </Badge>
+                  </li>
                 ))}
-              </div>
+              </ul>
             )}
           </div>
         ) : (
-          !flow.extractError && <p className="text-sm text-muted-foreground">No transaction matched what the customer said.</p>
+          !flow.extractError && (
+            <p className="text-sm text-muted-foreground">No transaction matched what the customer said.</p>
+          )
         )}
         {others.length > 0 && (
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">Other possible matches</p>
+          <div className="space-y-1.5">
+            <Eyebrow>Other possible matches</Eyebrow>
             {others.map((m) => {
               const t = flow.context?.transactions.find((x) => x.id === m.transactionId);
               if (!t) return null;
@@ -221,10 +273,10 @@ function MatchCard({ flow, selected }: { flow: CallFlow; selected: Transaction |
                   key={m.transactionId}
                   type="button"
                   onClick={() => flow.actions.selectTransaction(t.id)}
-                  className="flex w-full items-center justify-between rounded-md border px-3 py-2 text-left text-sm hover:bg-muted"
+                  className="flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm transition-colors outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 >
                   <span className="truncate">{t.merchant}</span>
-                  <span className="font-mono tabular-nums">{usd(t.amount)}</span>
+                  <Amount value={t.amount} />
                 </button>
               );
             })}
@@ -233,7 +285,7 @@ function MatchCard({ flow, selected }: { flow: CallFlow; selected: Transaction |
       </CardContent>
       <CardFooter>
         <Button className="w-full" disabled={!selected || flow.confirming} onClick={flow.actions.confirmTransaction}>
-          {flow.confirming ? <Loader2 className="animate-spin" /> : <CircleCheck />}
+          {flow.confirming ? <Spinner /> : <CircleCheck />}
           Customer confirmed this charge
         </Button>
       </CardFooter>
@@ -244,12 +296,12 @@ function MatchCard({ flow, selected }: { flow: CallFlow; selected: Transaction |
 function ConfirmedSummary({ flow }: { flow: CallFlow }) {
   const t = flow.confirmed!.transaction;
   return (
-    <div className="flex items-center gap-3 rounded-lg border bg-card px-4 py-3 text-sm">
+    <div className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3 shadow-xs">
       <CircleCheck className="size-4 shrink-0 text-success" />
       <div className="min-w-0 flex-1">
-        <div className="text-xs text-muted-foreground">Unrecognised charge · confirmed</div>
-        <div className="truncate font-medium">
-          {usd(t.amount)} {t.merchant}
+        <div className="text-xs text-muted-foreground">Unrecognised charge · confirmed with customer</div>
+        <div className="truncate text-sm font-medium">
+          <Amount value={t.amount} /> · {t.merchant}
         </div>
       </div>
       <EvidenceChips ids={[t.id]} />
@@ -260,30 +312,28 @@ function ConfirmedSummary({ flow }: { flow: CallFlow }) {
 function EligibilityCard({ flow }: { flow: CallFlow }) {
   const { eligibility } = flow.confirmed!;
   return (
-    <Card className="gap-3">
+    <Card>
       <CardHeader>
-        <CardTitle className="text-sm">Dispute eligibility</CardTitle>
-        <CardDescription className="text-xs">Checked by the bank's rules, not the AI · demo policy {eligibility.policyId}</CardDescription>
+        <CardTitle>Dispute eligibility</CardTitle>
+        <CardDescription>Checked by the bank’s rules, not the AI · demo policy {eligibility.policyId}</CardDescription>
         <CardAction>
-          {eligibility.eligible ? <Badge variant="success">Eligible</Badge> : <Badge variant="warning">Not eligible</Badge>}
+          {eligibility.eligible ? (
+            <Badge variant="success">Eligible</Badge>
+          ) : (
+            <Badge variant="warning">Not eligible</Badge>
+          )}
         </CardAction>
       </CardHeader>
       <CardContent>
-        <ul className="space-y-2">
+        <ul className="divide-y">
           {eligibility.checks.map((c) => (
-            <li key={c.clauseId} className="flex items-start gap-2 text-sm">
-              {c.passed ? (
-                <CircleCheck className="mt-0.5 size-4 shrink-0 text-success" />
-              ) : (
-                <CircleX className="mt-0.5 size-4 shrink-0 text-destructive" />
-              )}
+            <li key={c.clauseId} className="flex items-start gap-2.5 py-2.5 first:pt-0 last:pb-0">
+              <CheckIcon passed={c.passed} className="mt-0.5" />
               <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-2">
-                  <span>{c.label}</span>
-                  <EvidenceChips ids={[c.clauseId]} />
-                </div>
+                <div className="text-sm">{c.label}</div>
                 <div className="text-xs text-muted-foreground">{c.detail}</div>
               </div>
+              <EvidenceChips ids={[c.clauseId]} />
             </li>
           ))}
         </ul>
@@ -292,30 +342,34 @@ function EligibilityCard({ flow }: { flow: CallFlow }) {
   );
 }
 
-function AiCardHeader({ title, description }: { title: string; description?: string }) {
-  return (
-    <CardHeader>
-      <CardTitle className="flex items-center gap-1.5 text-sm text-ai">
-        <Sparkles className="size-4" /> {title}
-      </CardTitle>
-      {description && <CardDescription className="text-xs">{description}</CardDescription>}
-    </CardHeader>
-  );
-}
-
 function ScriptLines({ lines }: { lines: { text: string; evidenceIds: string[] }[] }) {
   return (
     <div className="space-y-2">
-      <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-        <MessageSquareQuote className="size-3.5" /> Say to the customer
-      </p>
+      <Eyebrow icon={MessageSquareQuote}>Say to the customer</Eyebrow>
       {lines.map((l, i) => (
-        <blockquote key={i} className="space-y-1.5 rounded-md border-l-2 border-ai bg-background px-3 py-2 text-sm leading-relaxed">
-          <p>“{l.text}”</p>
+        <blockquote
+          key={i}
+          className="space-y-2 rounded-lg border border-l-2 border-l-ai bg-background px-3 py-2.5 text-sm"
+        >
+          <p className="leading-relaxed">“{l.text}”</p>
           <EvidenceChips ids={l.evidenceIds} />
         </blockquote>
       ))}
     </div>
+  );
+}
+
+function AiCard({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
+  return (
+    <Card className="border-ai/20 bg-ai-soft/50">
+      <CardHeader>
+        <CardTitle>
+          <AiLabel className="text-sm font-semibold">{title}</AiLabel>
+        </CardTitle>
+        {description && <CardDescription>{description}</CardDescription>}
+      </CardHeader>
+      <CardContent className="space-y-4">{children}</CardContent>
+    </Card>
   );
 }
 
@@ -327,37 +381,35 @@ function RecommendationCard({ flow }: { flow: CallFlow }) {
         <CircleAlert />
         <AlertTitle>AI recommendation unavailable</AlertTitle>
         <AlertDescription>
-          Follow demo policy DSP-1: confirm the customer didn't authorise the charge, check they still have the card, then submit
-          the dispute below.
+          Follow demo policy DSP-1: confirm the customer didn’t authorise the charge, check they still have the card,
+          then submit the dispute below.
         </AlertDescription>
       </Alert>
     );
 
   return (
-    <Card className="gap-4 border-ai/20 bg-ai-soft/40">
-      <AiCardHeader title="Recommended next steps" description="Each step cites the records it relies on" />
-      <CardContent className="space-y-4">
-        <ol className="space-y-3">
-          {rec.data.steps.map((s, i) => (
-            <li key={i} className="flex gap-3 text-sm">
-              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-ai text-[11px] font-semibold text-white">
-                {i + 1}
-              </span>
-              <div className="space-y-1">
-                <p className="leading-relaxed">{s.text}</p>
-                <EvidenceChips ids={s.evidenceIds} />
-              </div>
-            </li>
-          ))}
-        </ol>
-        <ScriptLines lines={rec.data.scriptLines} />
-        {rec.droppedEvidence.length > 0 && (
-          <p className="text-xs text-muted-foreground">
-            {rec.droppedEvidence.length} citation(s) removed because the record doesn't exist.
-          </p>
-        )}
-      </CardContent>
-    </Card>
+    <AiCard title="Recommended next steps" description="Each step cites the records it relies on.">
+      <ol className="space-y-3">
+        {rec.data.steps.map((s, i) => (
+          <li key={i} className="flex gap-3 text-sm">
+            <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-ai text-[11px] font-semibold text-background tabular-nums">
+              {i + 1}
+            </span>
+            <div className="min-w-0 space-y-1.5">
+              <p className="leading-relaxed">{s.text}</p>
+              <EvidenceChips ids={s.evidenceIds} />
+            </div>
+          </li>
+        ))}
+      </ol>
+      <ScriptLines lines={rec.data.scriptLines} />
+      {rec.droppedEvidence.length > 0 && (
+        <p className="text-xs text-muted-foreground">
+          {rec.droppedEvidence.length} citation{rec.droppedEvidence.length > 1 ? "s" : ""} removed because the record
+          doesn’t exist.
+        </p>
+      )}
+    </AiCard>
   );
 }
 
@@ -372,69 +424,76 @@ function DisputeFormCard({ flow, transaction }: { flow: CallFlow; transaction: T
   });
   const [reviewing, setReviewing] = useState(false);
   const statementOk = form.customerStatement.trim().length >= 10;
+  const reasonLabel = REASONS.find((r) => r.id === form.reason)?.label;
 
   return (
-    <Card className="gap-4">
+    <Card>
       <CardHeader>
-        <CardTitle className="text-sm">Dispute form</CardTitle>
-        <CardDescription className="text-xs">
+        <CardTitle>Dispute form</CardTitle>
+        <CardDescription>
           {prefill ? "Pre-filled from the call. Check and edit before submitting." : "Fill in from the call."}
         </CardDescription>
+        {prefill && (
+          <CardAction>
+            <Badge variant="ai">
+              <Sparkles /> Pre-filled
+            </Badge>
+          </CardAction>
+        )}
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="rounded-lg bg-muted/50 p-3 text-sm">
-          <TransactionSummary t={transaction} />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="reason">Reason</Label>
-          <select
-            id="reason"
-            value={form.reason}
-            onChange={(e) => setForm({ ...form, reason: e.target.value as DisputeReason })}
-            className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-          >
-            {REASONS.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="statement" className="justify-between">
-            Customer statement
-            {prefill && (
-              <span className="flex items-center gap-1 text-[11px] font-normal text-ai">
-                <Sparkles className="size-3" /> AI draft
-              </span>
-            )}
-          </Label>
-          <Textarea
-            id="statement"
-            rows={3}
-            value={form.customerStatement}
-            onChange={(e) => setForm({ ...form, customerStatement: e.target.value })}
-            aria-invalid={!statementOk && form.customerStatement.length > 0}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label>Card still with the customer?</Label>
-          <div className="inline-flex rounded-md border p-0.5">
-            {[true, false].map((v) => (
-              <button
-                key={String(v)}
-                type="button"
-                onClick={() => setForm({ ...form, cardInPossession: v })}
-                className={cn(
-                  "rounded px-4 py-1 text-sm transition-colors",
-                  form.cardInPossession === v ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {v ? "Yes" : "No"}
-              </button>
-            ))}
+      <CardContent>
+        <FieldGroup className="gap-4">
+          <div className="rounded-lg border bg-surface p-3">
+            <TransactionSummary t={transaction} />
           </div>
-        </div>
+          <Field>
+            <FieldLabel htmlFor="reason">Reason</FieldLabel>
+            <Select value={form.reason} onValueChange={(v) => setForm({ ...form, reason: v as DisputeReason })}>
+              <SelectTrigger id="reason" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {REASONS.map((r) => (
+                  <SelectItem key={r.id} value={r.id}>
+                    {r.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field data-invalid={(!statementOk && form.customerStatement.length > 0) || undefined}>
+            <FieldLabel htmlFor="statement">Customer statement</FieldLabel>
+            <Textarea
+              id="statement"
+              rows={3}
+              value={form.customerStatement}
+              onChange={(e) => setForm({ ...form, customerStatement: e.target.value })}
+              aria-invalid={!statementOk && form.customerStatement.length > 0}
+              className="leading-relaxed"
+            />
+            <FieldDescription className="flex justify-between text-xs">
+              <span>In the customer’s words. At least 10 characters.</span>
+              <span className="tabular-nums">{form.customerStatement.trim().length}</span>
+            </FieldDescription>
+          </Field>
+          <Field orientation="horizontal" className="justify-between">
+            <FieldLabel>Card still with the customer?</FieldLabel>
+            <ToggleGroup
+              type="single"
+              variant="outline"
+              size="sm"
+              value={form.cardInPossession ? "yes" : "no"}
+              onValueChange={(v) => v && setForm({ ...form, cardInPossession: v === "yes" })}
+            >
+              <ToggleGroupItem value="yes" className={cn("px-4", SEGMENT_ON)}>
+                Yes
+              </ToggleGroupItem>
+              <ToggleGroupItem value="no" className={cn("px-4", SEGMENT_ON)}>
+                No
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </Field>
+        </FieldGroup>
       </CardContent>
       <CardFooter>
         <Button className="w-full" disabled={!statementOk} onClick={() => setReviewing(true)}>
@@ -443,24 +502,26 @@ function DisputeFormCard({ flow, transaction }: { flow: CallFlow; transaction: T
       </CardFooter>
 
       <Dialog open={reviewing} onOpenChange={setReviewing}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Approve dispute</DialogTitle>
-            <DialogDescription>This opens a dispute case in the bank's system (simulated). You're approving it as the agent.</DialogDescription>
+            <DialogDescription>
+              This opens a dispute case in the bank’s system (simulated). You’re approving it as the agent.
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3 text-sm">
-            <div className="rounded-lg border p-3">
+          <div className="space-y-4 text-sm">
+            <div className="rounded-lg border bg-surface p-3">
               <TransactionSummary t={transaction} />
             </div>
-            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
+            <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2.5">
               <dt className="text-muted-foreground">Reason</dt>
-              <dd>{REASONS.find((r) => r.id === form.reason)?.label}</dd>
+              <dd>{reasonLabel}</dd>
               <dt className="text-muted-foreground">Card with customer</dt>
               <dd>{form.cardInPossession ? "Yes" : "No"}</dd>
               <dt className="text-muted-foreground">Statement</dt>
-              <dd className="italic">“{form.customerStatement}”</dd>
+              <dd className="leading-relaxed">“{form.customerStatement.trim()}”</dd>
               <dt className="text-muted-foreground">Policy checks</dt>
-              <dd className="flex items-center gap-1 text-success">
+              <dd className="flex items-center gap-1.5 text-success">
                 <CircleCheck className="size-4" /> All passed
               </dd>
             </dl>
@@ -475,7 +536,7 @@ function DisputeFormCard({ flow, transaction }: { flow: CallFlow; transaction: T
                 if (await flow.actions.submitDispute(form)) setReviewing(false);
               }}
             >
-              {flow.submitting ? <Loader2 className="animate-spin" /> : <ShieldCheck />}
+              {flow.submitting ? <Spinner /> : <ShieldCheck />}
               Approve and create case
             </Button>
           </DialogFooter>
@@ -488,12 +549,15 @@ function DisputeFormCard({ flow, transaction }: { flow: CallFlow; transaction: T
 function CaseCreatedCard({ flow }: { flow: CallFlow }) {
   const c = flow.createdCase!;
   return (
-    <Card className="gap-4 border-success/30">
+    <Card className="border-success/30">
       <CardHeader>
-        <CardDescription className="flex items-center gap-1.5 text-xs font-medium text-success">
-          <CircleCheck className="size-4" /> Dispute created
-        </CardDescription>
+        <Eyebrow icon={CircleCheck} className="text-success">
+          Dispute created
+        </Eyebrow>
         <CardTitle className="font-mono text-2xl tracking-tight">{c.reference}</CardTitle>
+        <CardDescription>
+          {usd(c.amount)} · {c.merchant} · status <span className="capitalize">{c.status}</span>
+        </CardDescription>
         <CardAction>
           <EvidenceChips ids={[c.id]} />
         </CardAction>
@@ -502,7 +566,7 @@ function CaseCreatedCard({ flow }: { flow: CallFlow }) {
         <ScriptLines
           lines={[
             {
-              text: `Your dispute reference is ${c.reference}. You'll hear about a provisional credit within 10 business days, and the investigation can take up to 90 days.`,
+              text: `Your dispute reference is ${c.reference}. You’ll hear about a provisional credit within 10 business days, and the investigation can take up to 90 days.`,
               evidenceIds: ["DSP-1.5"],
             },
           ]}
@@ -510,7 +574,7 @@ function CaseCreatedCard({ flow }: { flow: CallFlow }) {
       </CardContent>
       {!flow.wrapUpRequested && (
         <CardFooter>
-          <Button className="w-full" variant="outline" onClick={flow.actions.startWrapUp}>
+          <Button className="w-full" onClick={flow.actions.startWrapUp}>
             Wrap up call <ArrowRight />
           </Button>
         </CardFooter>
@@ -526,31 +590,28 @@ function NotEligibleCard({ flow }: { flow: CallFlow }) {
     <>
       <Alert variant="warning">
         <FolderOpen />
-        <AlertTitle>{existing ? `Case ${existing.reference} is already open` : "A dispute can't be raised"}</AlertTitle>
+        <AlertTitle>{existing ? `Case ${existing.reference} is already open` : "A dispute can’t be raised"}</AlertTitle>
         <AlertDescription>
           {existing
-            ? `Opened ${new Date(existing.createdAt).toLocaleString()} for ${usd(existing.amount)} ${existing.merchant}. A second case won't be created.`
+            ? `Opened ${new Date(existing.createdAt).toLocaleString()} for ${usd(existing.amount)} ${existing.merchant}. A second case won’t be created.`
             : eligibility.checks.find((c) => !c.passed)?.detail}
         </AlertDescription>
       </Alert>
       {recommendation?.ok && (
-        <Card className="gap-4 border-ai/20 bg-ai-soft/40">
-          <AiCardHeader title="What to do instead" />
-          <CardContent className="space-y-4">
-            <ul className="space-y-2 text-sm">
-              {recommendation.data.steps.map((s, i) => (
-                <li key={i} className="space-y-1">
-                  <p>{s.text}</p>
-                  <EvidenceChips ids={s.evidenceIds} />
-                </li>
-              ))}
-            </ul>
-            <ScriptLines lines={recommendation.data.scriptLines} />
-          </CardContent>
-        </Card>
+        <AiCard title="What to do instead">
+          <ul className="space-y-3 text-sm">
+            {recommendation.data.steps.map((s, i) => (
+              <li key={i} className="space-y-1.5">
+                <p className="leading-relaxed">{s.text}</p>
+                <EvidenceChips ids={s.evidenceIds} />
+              </li>
+            ))}
+          </ul>
+          <ScriptLines lines={recommendation.data.scriptLines} />
+        </AiCard>
       )}
       {!flow.wrapUpRequested && (
-        <Button className="w-full" variant="outline" onClick={flow.actions.startWrapUp}>
+        <Button className="w-full" onClick={flow.actions.startWrapUp}>
           Wrap up call <ArrowRight />
         </Button>
       )}
@@ -560,19 +621,19 @@ function NotEligibleCard({ flow }: { flow: CallFlow }) {
 
 function WrapUpCard({ flow }: { flow: CallFlow }) {
   const draft = flow.wrapUp;
-  const [notes, setNotes] = useState<string | null>(null);
+  const [notes, setNotes] = useState(draft?.ok ? draft.data.notes : "");
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (draft && notes === null) setNotes(draft.ok ? draft.data.notes : "");
-  }, [draft, notes]);
-
   return (
-    <Card className="gap-4">
+    <Card>
       <CardHeader>
-        <CardTitle className="text-sm">Wrap-up notes</CardTitle>
-        <CardDescription className="text-xs">
-          {draft?.ok ? "Drafted from the call. Edit before saving." : draft ? "AI draft unavailable. Write the notes below." : "Drafting…"}
+        <CardTitle>Wrap-up notes</CardTitle>
+        <CardDescription>
+          {draft?.ok
+            ? "Drafted from the call. Edit before saving."
+            : draft
+              ? "AI draft unavailable. Write the notes below."
+              : "Drafting notes from the call…"}
         </CardDescription>
         {draft?.ok && (
           <CardAction>
@@ -582,22 +643,31 @@ function WrapUpCard({ flow }: { flow: CallFlow }) {
           </CardAction>
         )}
       </CardHeader>
-      <CardContent className="space-y-3">
-        {notes === null ? (
+      <CardContent className="space-y-4">
+        {!draft ? (
           <div className="space-y-2">
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-11/12" />
             <Skeleton className="h-4 w-3/4" />
           </div>
         ) : (
-          <Textarea rows={7} value={notes} onChange={(e) => setNotes(e.target.value)} className="text-sm leading-relaxed" />
+          <Textarea
+            aria-label="Wrap-up notes"
+            rows={7}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            className="leading-relaxed"
+          />
         )}
         {draft?.ok && draft.data.followUps.length > 0 && (
-          <div className="space-y-1">
-            <p className="text-xs font-medium text-muted-foreground">Follow-ups</p>
-            <ul className="list-disc space-y-0.5 pl-5 text-sm">
+          <div className="space-y-1.5">
+            <Eyebrow>Follow-ups</Eyebrow>
+            <ul className="space-y-1 text-sm">
               {draft.data.followUps.map((f, i) => (
-                <li key={i}>{f}</li>
+                <li key={i} className="flex gap-2">
+                  <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-muted-foreground/50" />
+                  {f}
+                </li>
               ))}
             </ul>
           </div>
@@ -606,14 +676,14 @@ function WrapUpCard({ flow }: { flow: CallFlow }) {
       <CardFooter>
         <Button
           className="w-full"
-          disabled={!notes?.trim() || saving}
+          disabled={!notes.trim() || saving}
           onClick={async () => {
             setSaving(true);
-            await flow.actions.saveWrapUp(notes!);
+            await flow.actions.saveWrapUp(notes);
             setSaving(false);
           }}
         >
-          {saving ? <Loader2 className="animate-spin" /> : <PhoneOff />}
+          {saving ? <Spinner /> : <PhoneOff />}
           Save notes and end call
         </Button>
       </CardFooter>
@@ -624,12 +694,13 @@ function WrapUpCard({ flow }: { flow: CallFlow }) {
 function DoneCard({ flow }: { flow: CallFlow }) {
   const existing = flow.confirmed?.eligibility.existingCase;
   return (
-    <Card className="gap-4">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <CircleCheck className="size-5 text-success" /> Call complete
-        </CardTitle>
-        <CardDescription>
+    <Card className="border-success/30">
+      <CardHeader className="justify-items-center gap-2 text-center">
+        <div className="mb-1 flex size-10 items-center justify-center rounded-full bg-success-soft">
+          <CircleCheck className="size-5 text-success" />
+        </div>
+        <CardTitle className="text-base">Call complete</CardTitle>
+        <CardDescription className="max-w-72">
           {flow.createdCase
             ? `Dispute ${flow.createdCase.reference} created, notes saved and every step logged.`
             : existing
@@ -637,9 +708,9 @@ function DoneCard({ flow }: { flow: CallFlow }) {
               : "Notes saved and every step logged."}
         </CardDescription>
       </CardHeader>
-      <CardFooter className="gap-2">
-        <Button className="flex-1" onClick={flow.actions.newCall}>
-          Take next call
+      <CardFooter>
+        <Button className="w-full" onClick={flow.actions.newCall}>
+          Take next call <ArrowRight />
         </Button>
       </CardFooter>
     </Card>

@@ -1,16 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { useCallFlow } from "@/lib/use-call-flow";
+import { Sparkles, UserRound } from "lucide-react";
+import { useCallFlow, type CallFlow } from "@/lib/use-call-flow";
+import { cn } from "@/lib/utils";
 import { AuditSheet } from "./audit-sheet";
 import { ConversationPanel } from "./conversation-panel";
 import { CopilotPanel } from "./copilot-panel";
 import { CustomerPanel } from "./customer-panel";
 import { EvidenceProvider } from "./evidence";
 import { Header } from "./header";
+import { PanelHeader } from "./kit";
 import { StartScreen } from "./start-screen";
-import { Stepper } from "./stepper";
+import { CompactStepper } from "./stepper";
 import { VerifyPanel } from "./verify-panel";
 
 export function Workspace() {
@@ -18,39 +20,73 @@ export function Workspace() {
   const [auditOpen, setAuditOpen] = useState(false);
 
   return (
-    <TooltipProvider>
-      <EvidenceProvider refs={flow.context?.evidence ?? []}>
-        <div className="flex h-dvh flex-col">
-          <Header flow={flow} onOpenAudit={() => setAuditOpen(true)} />
-          {!flow.call || !flow.stage ? (
-            <StartScreen flow={flow} />
-          ) : (
-            <>
-              <div className="border-b px-5 py-2 xl:hidden">
-                <Stepper stage={flow.stage} />
-              </div>
-              <main className="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto lg:grid-cols-[minmax(300px,360px)_minmax(0,1fr)_minmax(340px,420px)] lg:overflow-hidden">
-                <section className="min-h-0 overflow-y-auto border-b bg-muted/30 p-4 lg:border-r lg:border-b-0">
-                  <SectionTitle>Customer</SectionTitle>
-                  {flow.verified ? <CustomerPanel flow={flow} /> : <VerifyPanel flow={flow} />}
-                </section>
-                <section className="min-h-[420px] border-b lg:min-h-0 lg:border-b-0">
-                  <ConversationPanel flow={flow} />
-                </section>
-                <section className="min-h-0 overflow-y-auto bg-muted/30 p-4 lg:border-l">
-                  <SectionTitle>Co-pilot</SectionTitle>
+    <EvidenceProvider refs={flow.context?.evidence ?? []}>
+      <div className="flex h-dvh flex-col bg-surface">
+        <Header flow={flow} onOpenAudit={() => setAuditOpen(true)} />
+        {!flow.call || !flow.stage ? (
+          <StartScreen flow={flow} />
+        ) : (
+          <>
+            <div className="border-b bg-background px-4 py-2.5 xl:hidden">
+              <CompactStepper stage={flow.stage} />
+            </div>
+            <main className="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto lg:grid-cols-[minmax(300px,360px)_minmax(0,1fr)_minmax(360px,420px)] lg:overflow-hidden">
+              <Column className="lg:border-r">
+                <PanelHeader
+                  icon={UserRound}
+                  title="Customer"
+                  meta={flow.verified ? "Verified caller" : "Awaiting verification"}
+                />
+                <ColumnBody>{flow.verified ? <CustomerPanel flow={flow} /> : <VerifyPanel flow={flow} />}</ColumnBody>
+              </Column>
+              <Column className="h-[560px] bg-background lg:h-auto">
+                <ConversationPanel flow={flow} />
+              </Column>
+              <Column className="lg:border-l">
+                <PanelHeader icon={Sparkles} title="Co-pilot" meta={copilotMeta(flow)} />
+                <ColumnBody>
                   <CopilotPanel flow={flow} />
-                </section>
-              </main>
-            </>
-          )}
-        </div>
-        <AuditSheet callId={flow.call?.callId ?? null} version={flow.auditVersion} open={auditOpen} onOpenChange={setAuditOpen} />
-      </EvidenceProvider>
-    </TooltipProvider>
+                </ColumnBody>
+              </Column>
+            </main>
+          </>
+        )}
+      </div>
+      <AuditSheet
+        callId={flow.call?.callId ?? null}
+        version={flow.auditVersion}
+        open={auditOpen}
+        onOpenChange={setAuditOpen}
+      />
+    </EvidenceProvider>
   );
 }
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <h2 className="mb-3 px-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">{children}</h2>;
+function Column({ className, children }: { className?: string; children: React.ReactNode }) {
+  return <section className={cn("flex flex-col border-b lg:min-h-0 lg:border-b-0", className)}>{children}</section>;
+}
+
+function ColumnBody({ children }: { children: React.ReactNode }) {
+  return <div className="p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">{children}</div>;
+}
+
+function copilotMeta(flow: CallFlow) {
+  switch (flow.stage) {
+    case "verify":
+      return "Starts after verification";
+    case "brief":
+      return "Ready to listen";
+    case "listen":
+      return "Listening";
+    case "confirm":
+      return "Match found";
+    case "act":
+      return flow.createdCase ? "Case created" : "Recommendation ready";
+    case "wrapup":
+      return "Wrap-up";
+    case "done":
+      return "Call complete";
+    default:
+      return undefined;
+  }
 }

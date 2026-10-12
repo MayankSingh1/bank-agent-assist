@@ -144,7 +144,10 @@ export function useCallFlow() {
         setVerify({ attemptsLeft: r.attemptsLeft, locked: false, error: null });
         const ctx = await api.context(call.callId);
         setContext(ctx);
-        api.briefing(call.callId).then(setBriefing).catch((e) => toast.error(message(e)));
+        api
+          .briefing(call.callId)
+          .then(setBriefing)
+          .catch((e) => toast.error(message(e)));
       } catch (e) {
         if (e instanceof ApiError && e.code === "verification_locked")
           setVerify({ attemptsLeft: 0, locked: true, error: e.message });
@@ -184,11 +187,7 @@ export function useCallFlow() {
   }, [call, transcript.length]);
 
   useEffect(() => {
-    if (!playing || !call) return;
-    if (transcript.length >= call.script.length) {
-      setPlaying(false);
-      return;
-    }
+    if (!playing || !call || transcript.length >= call.script.length) return;
     const t = setTimeout(() => void sendNextTurn(), transcript.length === 0 ? 200 : TURN_DELAY_MS);
     return () => clearTimeout(t);
   }, [playing, call, transcript.length, sendNextTurn]);
@@ -214,6 +213,11 @@ export function useCallFlow() {
         const r = await api.createDispute({ callId: call.callId, idempotencyKey: idempotencyKey.current, form });
         setCreatedCase(r.case);
         toast.success(`Dispute ${r.case.reference} created`);
+        // Refresh account data so the transaction list shows the new case.
+        api
+          .context(call.callId)
+          .then(setContext)
+          .catch(() => {});
         return true;
       } catch (e) {
         toast.error(message(e));
@@ -291,7 +295,8 @@ export function useCallFlow() {
     context,
     briefing,
     transcript,
-    playing,
+    // Playback stops by itself at the end of the script.
+    playing: playing && !scriptDone,
     analyzing,
     scriptDone,
     facts,

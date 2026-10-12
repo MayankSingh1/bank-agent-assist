@@ -15,7 +15,11 @@ function setup(ai: AiProvider = new MockProvider()) {
   return { service, callId, script };
 }
 
-async function playScript(service: CallService, callId: string, script: { speaker: "agent" | "customer"; text: string }[]) {
+async function playScript(
+  service: CallService,
+  callId: string,
+  script: { speaker: "agent" | "customer"; text: string }[],
+) {
   let last = null;
   for (const turn of script) {
     const r = await service.addTurn(callId, turn);
@@ -27,10 +31,18 @@ async function playScript(service: CallService, callId: string, script: { speake
 const failingAi: AiProvider = {
   name: "off",
   model: null,
-  briefing: async () => { throw new Error("down"); },
-  extractFacts: async () => { throw new Error("down"); },
-  recommend: async () => { throw new Error("down"); },
-  wrapUp: async () => { throw new Error("down"); },
+  briefing: async () => {
+    throw new Error("down");
+  },
+  extractFacts: async () => {
+    throw new Error("down");
+  },
+  recommend: async () => {
+    throw new Error("down");
+  },
+  wrapUp: async () => {
+    throw new Error("down");
+  },
 };
 
 describe("M0 scenario A", () => {
@@ -46,14 +58,22 @@ describe("M0 scenario A", () => {
     // The $129 charge, not the $12.99 basic plan the customer also mentions.
     expect(analysis.matches[0]?.transactionId).toBe("txn_1042");
 
-    const confirmed = await service.confirmIssue(callId, { transactionId: "txn_1042", issueType: "unrecognised_charge" });
+    const confirmed = await service.confirmIssue(callId, {
+      transactionId: "txn_1042",
+      issueType: "unrecognised_charge",
+    });
     expect(confirmed.eligibility.eligible).toBe(true);
     expect(confirmed.recommendation?.ok).toBe(true);
 
     const { case: created } = service.createDispute({
       callId,
       idempotencyKey: "key-00000001",
-      form: { transactionId: "txn_1042", reason: "not_authorised", customerStatement: "I did not make this purchase.", cardInPossession: true },
+      form: {
+        transactionId: "txn_1042",
+        reason: "not_authorised",
+        customerStatement: "I did not make this purchase.",
+        cardInPossession: true,
+      },
     });
     expect(created.reference).toMatch(/^DSP-\d{4}-0001$/);
 
@@ -62,7 +82,13 @@ describe("M0 scenario A", () => {
 
     service.saveWrapUp(callId, "Notes");
     const types = service.getAudit(callId).events.map((e) => e.type);
-    expect(types).toEqual(["call.started", "caller.verified", "transaction.confirmed", "dispute.created", "call.wrapped_up"]);
+    expect(types).toEqual([
+      "call.started",
+      "caller.verified",
+      "transaction.confirmed",
+      "dispute.created",
+      "call.wrapped_up",
+    ]);
   });
 });
 
@@ -81,7 +107,12 @@ describe("exception paths", () => {
   it("X-02: a second call about the same charge shows the existing case and can't create another", async () => {
     const store = new MemoryStore();
     const service = new CallService(store, new MockProvider());
-    const form = { transactionId: "txn_1042", reason: "not_authorised" as const, customerStatement: "I did not make this.", cardInPossession: true };
+    const form = {
+      transactionId: "txn_1042",
+      reason: "not_authorised" as const,
+      customerStatement: "I did not make this.",
+      cardInPossession: true,
+    };
 
     const first = service.startCall(SCENARIO, "demo-agent").callId;
     service.verifyCaller(first, GOOD);
@@ -90,17 +121,27 @@ describe("exception paths", () => {
 
     const second = service.startCall(SCENARIO, "demo-agent").callId;
     service.verifyCaller(second, GOOD);
-    const confirmed = await service.confirmIssue(second, { transactionId: "txn_1042", issueType: "unrecognised_charge" });
+    const confirmed = await service.confirmIssue(second, {
+      transactionId: "txn_1042",
+      issueType: "unrecognised_charge",
+    });
     expect(confirmed.eligibility.eligible).toBe(false);
     expect(confirmed.eligibility.existingCase?.reference).toBe(created.reference);
-    expect(() => service.createDispute({ callId: second, idempotencyKey: "key-second-1", form })).toThrowError(/already open/);
+    expect(() => service.createDispute({ callId: second, idempotencyKey: "key-second-1", form })).toThrowError(
+      /already open/,
+    );
   });
 
   it("is idempotent: the same submission twice creates one case", async () => {
     const { service, callId } = setup();
     service.verifyCaller(callId, GOOD);
     await service.confirmIssue(callId, { transactionId: "txn_1042", issueType: "unrecognised_charge" });
-    const form = { transactionId: "txn_1042", reason: "not_authorised" as const, customerStatement: "Not me at all.", cardInPossession: true };
+    const form = {
+      transactionId: "txn_1042",
+      reason: "not_authorised" as const,
+      customerStatement: "Not me at all.",
+      cardInPossession: true,
+    };
     const a = service.createDispute({ callId, idempotencyKey: "same-key-1", form });
     const b = service.createDispute({ callId, idempotencyKey: "same-key-1", form });
     expect(b.replayed).toBe(true);
@@ -111,8 +152,15 @@ describe("exception paths", () => {
     const { service, callId } = setup();
     service.verifyCaller(callId, GOOD);
     await service.confirmIssue(callId, { transactionId: "txn_1042", issueType: "unrecognised_charge" });
-    const form = { transactionId: "txn_1038", reason: "other" as const, customerStatement: "Some statement here.", cardInPossession: true };
-    expect(() => service.createDispute({ callId, idempotencyKey: "k-unconfirmed", form })).toThrowError(/Confirm the transaction/);
+    const form = {
+      transactionId: "txn_1038",
+      reason: "other" as const,
+      customerStatement: "Some statement here.",
+      cardInPossession: true,
+    };
+    expect(() => service.createDispute({ callId, idempotencyKey: "k-unconfirmed", form })).toThrowError(
+      /Confirm the transaction/,
+    );
   });
 
   it("refuses pending transactions (DSP-1.1)", async () => {

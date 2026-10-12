@@ -28,7 +28,10 @@ export class GeminiProvider implements AiProvider {
       : new GoogleGenAI({ apiKey: opts.apiKey });
   }
 
-  private async generate<S extends z.ZodType>(schema: S, prompt: { system: string; user: string }): Promise<z.infer<S>> {
+  private async generate<S extends z.ZodType>(
+    schema: S,
+    prompt: { system: string; user: string },
+  ): Promise<z.infer<S>> {
     const response = await this.client.models.generateContent({
       model: this.model,
       contents: [{ role: "user", parts: [{ text: prompt.user }] }],

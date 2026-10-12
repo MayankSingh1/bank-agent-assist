@@ -8,13 +8,15 @@ When a customer calls, the assistant verifies the caller, briefs the agent, foll
 
 ![M0 workspace](docs/screenshots/m0-recommendation.png)
 
+<sub>Light and [dark](docs/screenshots/m0-dark.png) themes follow your OS. More: [match](docs/screenshots/m0-match.png) · [case created](docs/screenshots/m0-case-created.png) · [audit log](docs/screenshots/m0-audit.png) · [case already open](docs/screenshots/m0-existing-case.png)</sub>
+
 ## Status: M0 prototype
 
 Scenario A runs end to end: a customer calls about a $129 charge she doesn't recognise, and the call ends in a dispute case. See [docs/M0.md](docs/M0.md).
 
 ## Run it
 
-Requires Node 20+.
+Requires Node 20+ (CI uses the version in [`.nvmrc`](.nvmrc)).
 
 ```bash
 npm install
@@ -31,7 +33,7 @@ GEMINI_API_KEY=...                # from Google AI Studio
 # GOOGLE_CLOUD_LOCATION=global
 ```
 
-**Demo:** Start call → verify with `1990-04-14` and `4242` → Play call → Customer confirmed this charge → Review and approve → Wrap up call. Run it again without resetting to see the "case already open" path. **Reset demo** clears all cases.
+**Demo:** Start call → verify with `1990-04-14` and `4242` (or click **Fill in**) → Play call → Customer confirmed this charge → Review and approve → Wrap up call. Run it again without resetting to see the "case already open" path. **Reset demo data** (in the ⋮ menu) clears all cases. The theme follows your OS; the sun/moon button overrides it.
 
 ## Repo layout
 
@@ -47,11 +49,14 @@ docs/              Scope, M0 flow, brainstorm, references, screenshots
 | `npm run dev` | Start the app in development mode |
 | `npm test` | Unit tests for `packages/core` |
 | `npm run typecheck` | TypeScript across all workspaces |
-| `npm run build` | Production build (what CI runs) |
+| `npm run lint` | ESLint (Next.js, React hooks, accessibility, TypeScript rules) |
+| `npm run format` | Format everything with Prettier (Tailwind classes sorted) |
+| `npm run check` | Format check, lint, typecheck and tests: run before pushing |
+| `npm run build` | Production build |
 
 ## Contributing
 
-Work on a branch and open a pull request to `main`. CI (typecheck, tests, build) must pass and one approval is needed. See [.github/rulesets](.github/rulesets/README.md) for the branch protection setup.
+Work on a branch and open a pull request to `main`. CI (format, lint, typecheck, tests, build, dependency audit) must pass and one approval is needed. Dependabot opens weekly grouped dependency updates. See [.github/rulesets](.github/rulesets/README.md) for the branch protection setup.
 
 ## Docs
 

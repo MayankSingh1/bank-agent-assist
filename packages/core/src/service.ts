@@ -4,7 +4,13 @@ import { createAiProvider } from "./ai";
 import type { AuditEvent, CallSession, Store } from "./data/store";
 import { MemoryStore } from "./data/store";
 import { checkDisputeEligibility, type EligibilityResult } from "./domain/eligibility";
-import { buildEvidenceIndex, resolveEvidence, verifyEvidence, type EvidenceIndex, type EvidenceRef } from "./domain/evidence";
+import {
+  buildEvidenceIndex,
+  resolveEvidence,
+  verifyEvidence,
+  type EvidenceIndex,
+  type EvidenceRef,
+} from "./domain/evidence";
 import { matchTransactions, mergeFacts, type TransactionMatch } from "./domain/matching";
 import { AppError } from "./errors";
 import type {
@@ -32,8 +38,7 @@ export type AiMeta = { provider: AiProvider["name"]; model: string | null; ms: n
 
 /** Every AI result says where it came from and whether it worked. Failures fall back in the UI (X-06). */
 export type AiResult<T> =
-  | ({ ok: true; data: T; droppedEvidence: string[] } & AiMeta)
-  | ({ ok: false; error: string } & AiMeta);
+  ({ ok: true; data: T; droppedEvidence: string[] } & AiMeta) | ({ ok: false; error: string } & AiMeta);
 
 export type CallStarted = {
   callId: string;
@@ -121,7 +126,11 @@ export class CallService {
     return {
       callId: call.id,
       scenario: { id: scenario.id, title: scenario.title, summary: scenario.summary },
-      caller: { phone: scenario.callerPhone, maskedName: maskName(customer.name), maskedCard: `•••• ${card.last4.slice(-2).padStart(4, "•")}` },
+      caller: {
+        phone: scenario.callerPhone,
+        maskedName: maskName(customer.name),
+        maskedCard: `•••• ${card.last4.slice(-2).padStart(4, "•")}`,
+      },
       script: scenario.turns,
       ai: this.aiInfo,
     };
@@ -129,7 +138,8 @@ export class CallService {
 
   verifyCaller(callId: string, answer: { dob: string; last4: string }): VerifyResult {
     const call = this.mustCall(callId);
-    if (call.verified) return { verified: true, attemptsLeft: MAX_VERIFY_ATTEMPTS - call.verifyAttempts, locked: false };
+    if (call.verified)
+      return { verified: true, attemptsLeft: MAX_VERIFY_ATTEMPTS - call.verifyAttempts, locked: false };
     if (call.verifyAttempts >= MAX_VERIFY_ATTEMPTS)
       throw new AppError("verification_locked", "Too many failed attempts. Escalate to a team lead.");
 
@@ -141,9 +151,18 @@ export class CallService {
 
     if (ok) {
       call.verified = true;
-      this.audit(call, "caller.verified", "Caller verified with date of birth and last 4 digits", [customer.id, card.id]);
+      this.audit(call, "caller.verified", "Caller verified with date of birth and last 4 digits", [
+        customer.id,
+        card.id,
+      ]);
     } else {
-      this.audit(call, "caller.verification_failed", `Verification failed (${attemptsLeft} attempts left)`, [], "rejected");
+      this.audit(
+        call,
+        "caller.verification_failed",
+        `Verification failed (${attemptsLeft} attempts left)`,
+        [],
+        "rejected",
+      );
     }
     return { verified: ok, attemptsLeft, locked: !ok && attemptsLeft === 0 };
   }
@@ -218,7 +237,10 @@ export class CallService {
         const index = this.evidenceIndex(call);
         const steps = verifyEvidence(data.steps, index);
         const lines = verifyEvidence(data.scriptLines, index);
-        return { data: { ...data, steps: steps.items, scriptLines: lines.items }, dropped: [...steps.dropped, ...lines.dropped] };
+        return {
+          data: { ...data, steps: steps.items, scriptLines: lines.items },
+          dropped: [...steps.dropped, ...lines.dropped],
+        };
       },
     );
 
@@ -238,14 +260,30 @@ export class CallService {
     const transaction = this.mustOwnTransaction(call, input.form.transactionId);
     const eligibility = this.eligibilityFor(transaction);
     if (eligibility.existingCase) {
-      this.audit(call, "dispute.rejected", `Duplicate blocked: case ${eligibility.existingCase.reference} already open`, [eligibility.existingCase.id], "rejected");
-      throw new AppError("duplicate_case", `Case ${eligibility.existingCase.reference} is already open for this transaction`, {
-        case: eligibility.existingCase,
-      });
+      this.audit(
+        call,
+        "dispute.rejected",
+        `Duplicate blocked: case ${eligibility.existingCase.reference} already open`,
+        [eligibility.existingCase.id],
+        "rejected",
+      );
+      throw new AppError(
+        "duplicate_case",
+        `Case ${eligibility.existingCase.reference} is already open for this transaction`,
+        {
+          case: eligibility.existingCase,
+        },
+      );
     }
     if (!eligibility.eligible) {
       const failed = eligibility.checks.filter((c) => !c.passed);
-      this.audit(call, "dispute.rejected", `Not eligible: ${failed.map((c) => c.label).join(", ")}`, failed.map((c) => c.clauseId), "rejected");
+      this.audit(
+        call,
+        "dispute.rejected",
+        `Not eligible: ${failed.map((c) => c.label).join(", ")}`,
+        failed.map((c) => c.clauseId),
+        "rejected",
+      );
       throw new AppError("not_eligible", "This transaction isn't eligible for a dispute", { checks: failed });
     }
 
@@ -313,7 +351,13 @@ export class CallService {
     const call = this.mustCall(callId);
     const events = this.store.audit(callId);
     const index = this.evidenceIndex(call);
-    return { events, evidence: resolveEvidence(events.flatMap((e) => e.evidenceIds), index) };
+    return {
+      events,
+      evidence: resolveEvidence(
+        events.flatMap((e) => e.evidenceIds),
+        index,
+      ),
+    };
   }
 
   reset() {
@@ -322,7 +366,10 @@ export class CallService {
 
   // -------------------------------------------------------------------------
 
-  private async runAi<T>(call: () => Promise<T>, check: (data: T) => { data: T; dropped: string[] }): Promise<AiResult<T>> {
+  private async runAi<T>(
+    call: () => Promise<T>,
+    check: (data: T) => { data: T; dropped: string[] },
+  ): Promise<AiResult<T>> {
     const started = Date.now();
     const meta = () => ({ provider: this.ai.name, model: this.ai.model, ms: Date.now() - started });
     try {

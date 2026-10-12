@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useMemo, useState } from "react";
-import { FileText, Receipt, CreditCard, User, FolderOpen } from "lucide-react";
+import { CreditCard, FileText, FolderOpen, Receipt, User } from "lucide-react";
 import type { EvidenceRef } from "@baa/core";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -16,7 +16,10 @@ const EvidenceContext = createContext<EvidenceState>({ refs: new Map(), highligh
 
 export function EvidenceProvider({ refs, children }: { refs: EvidenceRef[]; children: React.ReactNode }) {
   const [highlighted, highlight] = useState<string | null>(null);
-  const value = useMemo(() => ({ refs: new Map(refs.map((r) => [r.id, r])), highlighted, highlight }), [refs, highlighted]);
+  const value = useMemo(
+    () => ({ refs: new Map(refs.map((r) => [r.id, r])), highlighted, highlight }),
+    [refs, highlighted],
+  );
   return <EvidenceContext.Provider value={value}>{children}</EvidenceContext.Provider>;
 }
 
@@ -24,9 +27,22 @@ export const useEvidence = () => useContext(EvidenceContext);
 
 const ICONS = { transaction: Receipt, policy: FileText, card: CreditCard, customer: User, case: FolderOpen } as const;
 
-/** Small chips showing which records an AI statement relies on. Hover for the record, click to highlight it. */
-export function EvidenceChips({ ids, className }: { ids: string[]; className?: string }) {
-  const { refs, highlight } = useEvidence();
+/**
+ * Chips showing which records a statement relies on. Hover or focus one to see the record and
+ * highlight it in the customer panel. `refs` overrides the call's evidence index (the audit log
+ * resolves its own).
+ */
+export function EvidenceChips({
+  ids,
+  refs: override,
+  className,
+}: {
+  ids: string[];
+  refs?: Map<string, EvidenceRef>;
+  className?: string;
+}) {
+  const ctx = useEvidence();
+  const refs = override ?? ctx.refs;
   if (ids.length === 0) return null;
   return (
     <span className={cn("inline-flex flex-wrap gap-1", className)}>
@@ -38,11 +54,12 @@ export function EvidenceChips({ ids, className }: { ids: string[]; className?: s
             <TooltipTrigger asChild>
               <button
                 type="button"
-                onMouseEnter={() => highlight(id)}
-                onMouseLeave={() => highlight(null)}
-                onFocus={() => highlight(id)}
-                onBlur={() => highlight(null)}
-                className="inline-flex items-center gap-1 rounded border border-border bg-muted/60 px-1.5 py-px font-mono text-[11px] leading-4 text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
+                aria-label={ref ? `${id}: ${ref.label}` : id}
+                onMouseEnter={() => ctx.highlight(id)}
+                onMouseLeave={() => ctx.highlight(null)}
+                onFocus={() => ctx.highlight(id)}
+                onBlur={() => ctx.highlight(null)}
+                className="inline-flex h-5 items-center gap-1 rounded-md border bg-background px-1.5 font-mono text-[11px] text-muted-foreground transition-colors outline-none hover:border-foreground/20 hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
               >
                 <Icon className="size-3" />
                 {id}

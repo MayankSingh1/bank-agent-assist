@@ -24,7 +24,10 @@ export function route<S extends z.ZodType | undefined = undefined>(
       return NextResponse.json(result ?? { ok: true });
     } catch (err) {
       if (err instanceof AppError)
-        return NextResponse.json({ error: { code: err.code, message: err.message, details: err.details } }, { status: err.status });
+        return NextResponse.json(
+          { error: { code: err.code, message: err.message, details: err.details } },
+          { status: err.status },
+        );
       if (err instanceof ZodError)
         return NextResponse.json(
           { error: { code: "bad_request", message: err.issues[0]?.message ?? "Invalid request", details: err.issues } },

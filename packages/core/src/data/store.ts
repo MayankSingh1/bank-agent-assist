@@ -1,4 +1,15 @@
-import type { BriefingSummary, Card, Customer, DisputeCase, ExtractedFacts, IssueType, Policy, Scenario, ScriptTurn, Transaction } from "../schemas";
+import type {
+  BriefingSummary,
+  Card,
+  Customer,
+  DisputeCase,
+  ExtractedFacts,
+  IssueType,
+  Policy,
+  Scenario,
+  ScriptTurn,
+  Transaction,
+} from "../schemas";
 import type { EligibilityResult } from "../domain/eligibility";
 import { loadFixtures } from "./fixtures";
 
