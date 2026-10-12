@@ -1,18 +1,163 @@
-# Bank Agent Assist: scope, milestones and stack
+# Bank Agent Assist: project scope
 
 > Status: **draft for team review** (12 Oct 2026). Merges the original pitch ([pitch PDF](reference/pitch-2026-10-09.pdf)), the [brainstorm](BRAINSTORM.md) and the [ChatGPT session](reference/chatgpt-export/chat-transcript.md). Items with ❓ still need a decision.
 
+**In one sentence:** Bank Agent Assist is an AI co-pilot that sits beside a bank's card-servicing call agent. It turns what the customer says on the call into a verified, policy-checked, agent-approved resolution, so the agent stops searching across systems and starts resolving.
+
 **Product principle:** AI recommends. Agents decide. Banking systems execute.
 
-**One-line scope:** A web workspace for a bank support agent. When a call connects, it verifies the caller, briefs the agent, follows the conversation, matches the issue to the right transaction, recommends a policy-backed resolution with evidence, and executes actions only after the agent approves. Every step is audited and wrap-up notes are drafted automatically.
-
-**Issue types:** unrecognised charge, ending in a dispute or card block (**Must**, the hero scenario); failed transaction (**Should**); fee or billing query, ending in a fee waiver (**Should**). Each is a playbook: the facts to extract, eligibility rules, allowed actions and script lines.
-
-**Hero scenario:** A customer calls about a card charge they don't recognise. The call ends in a dispute case, or a card block if the account looks compromised.
+This document has two parts:
+- **Part A, what and why** (sections 1–7): domain, problem, users, the proposal and its boundaries.
+- **Part B, how** (sections 8–13): guardrails, feature buckets, milestones, services, repo structure.
 
 ---
 
-## 1. Guardrails that apply to every feature
+# Part A: what and why
+
+## 1. Domain
+
+| Layer | Where we sit |
+|---|---|
+| Industry | BFSI: banking, financial services and insurance (hackathon track: *Intelligent Risk, Fraud & Financial Experiences*) |
+| Segment | Retail banking: **card issuing** (credit and debit cards) |
+| Function | **Card servicing operations**: the work of handling cardholder problems after the card is issued |
+| Channel | **Assisted service by voice**: a cardholder phones the bank's contact centre and a human agent handles the call |
+| Side of the call | The **bank's agent**, not the customer. Nothing in this product talks to the customer directly. |
+
+**Key terms**
+
+| Term | Meaning here |
+|---|---|
+| Cardholder | The bank's customer calling about their card |
+| Agent | The bank employee answering the call (Tier 1 contact centre) |
+| Dispute | A formal claim that a card transaction is wrong; the bank opens a case and may later raise a chargeback with the card network |
+| Settlement | When a card payment actually completes between banks; a "failed" payment can be debited from the customer without the merchant being paid |
+| Playbook | Our term for one issue type's procedure: what facts to gather, eligibility rules, allowed actions, required script lines |
+| Handle time | Talk time plus after-call work (notes, system updates) |
+
+## 2. Problem space
+
+**Why cardholders call.** A large share of card-servicing calls fall into a handful of repetitive, procedure-driven reasons: a charge they don't recognise, a payment that failed but was still debited, and fees they want explained or removed. These are high-volume, follow known procedures, and touch money and regulation.
+
+**What makes these calls hard for the agent**
+
+| Pain | What happens today (from the pitch) |
+|---|---|
+| Fragmented systems | The agent switches between 4–6 tools (CRM, billing, transaction database, case management) to see one customer |
+| Manual reconstruction | Profile, recent charges and existing cases are pieced together by searching and scanning |
+| Holds | The customer is put on hold, repeatedly, while the agent researches |
+| Procedure recall | The right dispute steps and eligibility rules come from memory and training |
+| Re-typing | Customer and transaction details are retyped into forms; nothing is pre-filled |
+| Scripts | Required disclosures and next-step explanations are read from separate scripts |
+| After-call work | 5–10 minutes per call updating systems and writing notes |
+
+**Why this matters more in banking than elsewhere**
+- **Money and regulation.** A wrong action (disputing the wrong transaction, missing a deadline, skipping a disclosure) has financial and compliance cost, not just a slower call.
+- **Identity.** The caller must be verified before any account detail is shared.
+- **Auditability.** Every action must be traceable to who did it and why.
+- **Risk hides in routine calls.** An "unrecognised charge" call can be a simple merchant dispute or the first sign of a compromised card.
+
+**Stakeholders**
+
+| Stakeholder | What they need |
+|---|---|
+| **Agent** (primary user) | The right customer and transaction in front of them, the right procedure, and actions without system-hopping |
+| Team lead / QA / compliance | Consistent procedure, required disclosures given, an audit trail for every action |
+| Operations leadership | Lower handle time and cost, faster onboarding of new agents |
+| Cardholder (indirect) | Fewer holds, a correct outcome first time, a clear explanation |
+
+## 3. Problem statement
+
+> Card-servicing agents resolve high-volume, regulated cardholder issues (unrecognised charges, failed transactions, fees) while working across 4–6 disconnected systems, recalling procedures from memory and documenting by hand. This makes calls long (6–10 minutes by the pitch's estimate), puts customers on hold, and leaves room for errors in actions that move money or carry compliance obligations.
+
+**How might we…**
+1. …put the right customer and the right transaction in front of the agent as the customer describes the problem?
+2. …guide the agent through the correct, policy-compliant procedure without relying on memory?
+3. …let the agent act (dispute, block, waive) from one place, safely, with a record of why?
+4. …remove after-call documentation without sacrificing accuracy?
+
+*The 6–10 minute and 4–6 system figures are the team's industry estimates from the pitch, not measured data. Our prototype measures its own before/after on synthetic scenarios (S-02, S-03).*
+
+## 4. Who we're building for
+
+**Primary user: Tier 1 card-servicing agent.** Handles many calls per shift across issue types. Knows the systems but not every procedure detail; newer agents rely heavily on scripts and on asking a team lead.
+
+**Not our user (this project):** the cardholder directly. This is not a customer-facing chatbot or self-service app.
+
+## 5. What we're proposing
+
+**A single agent workspace that follows the call from connect to wrap-up.** At each stage the AI does the searching, reading and drafting; deterministic code applies the bank's rules; the agent makes every decision.
+
+| Call stage | What the agent sees | Who does the work |
+|---|---|---|
+| 1. Connect and verify | Caller ID, verification questions; data stays masked until verified | Agent verifies; code gates data |
+| 2. Brief | Profile, cards, recent transactions, open cases, risk flags, a 3–4 line summary | Code assembles data and flags; **Gemini** summarises with evidence |
+| 3. Listen | Live transcript (scripted in the demo; microphone as a Should) | Simulator / Speech-to-Text |
+| 4. Match | The transaction the customer is talking about, with alternatives if ambiguous; the issue type pre-selected | **Gemini** extracts merchant/amount/date; code finds matches; agent confirms |
+| 5. Resolve | Recommended steps, script lines, eligibility result, a pre-filled form, each with evidence references | Code decides eligibility; **Gemini** drafts steps and wording, citing records; backend verifies citations |
+| 6. Act | Approve button for dispute / card block / fee waiver / reversal | Agent approves; code validates and executes (simulated); audit log written |
+| 7. Wrap up | Draft call notes and disposition | **Gemini** drafts; agent edits and saves |
+
+**What makes it more than a summary tool**
+1. **Conversation to action:** it ends in an approved banking action, not just a paragraph of text.
+2. **Evidence references:** every AI statement points to a real transaction, case or policy clause.
+3. **Rules in code:** eligibility and permissions are deterministic and testable; the model never decides them.
+4. **Safe failure:** defined behaviour for unverified callers, duplicate disputes, ambiguous transactions, ineligible requests, compromised accounts, AI failures and action failures.
+
+**Issue types (playbooks)**
+
+| Issue type | Bucket | Typical outcome |
+|---|---|---|
+| Unrecognised charge | **Must** (hero scenario) | Dispute case, or card block + escalation if the account looks compromised |
+| Failed transaction | Should | Settlement check, reversal timeline explained, reversal/trace request |
+| Fee or billing query | Should | Fee explained, waiver if eligible |
+
+**Value by stakeholder**
+
+| Stakeholder | Value |
+|---|---|
+| Agent | One view, no holds for research, procedure guided, notes drafted |
+| Compliance | Required steps enforced, every action audited with its evidence |
+| Operations | Shorter handle time, faster onboarding (the procedure lives in the tool) |
+| Cardholder | Faster, correct resolution |
+
+## 6. Project boundaries
+
+**In scope**
+- Card-servicing voice calls, handled by a human agent
+- The three issue types above (one Must, two Should)
+- One agent workspace (web), English only
+- Simulated bank systems, synthetic data, a fictional demo policy
+- Scripted calls as the primary demo input
+
+**Out of scope**
+- Customer-facing bots, chat or email channels
+- Real telephony, real core-banking/card systems, real money movement
+- What happens after the case is created (back-office investigation, chargeback filing with card networks)
+- Training fraud-detection models; risk flags are rule-based
+- Autonomous actions without agent approval
+- Workforce management, QA scoring, agent performance analytics
+
+**Assumptions**
+- In a real bank, caller ID and audio come from the telephony platform, and actions go through the bank's existing APIs. We simulate both behind clear interfaces.
+- Real deployment needs customer consent for call analysis and masking of card numbers; we show the pattern, not a certified implementation.
+
+## 7. What success looks like (hackathon)
+
+| Criterion | Target |
+|---|---|
+| End-to-end demo | Scenarios A, B and C complete on the deployed app with live Gemini calls |
+| Safety | Zero actions executed without agent approval; zero duplicate cases |
+| Grounding | Every AI claim shown carries a valid evidence reference |
+| Exception handling | Each exception path (X-01..X-07) has a test and a visible UI state |
+| Time to context | The matching transaction is on screen within one customer turn of being described |
+| Handle time | Measured on the timed before/after comparison (S-02), reported as prototype findings |
+
+---
+
+# Part B: how
+
+## 8. Guardrails that apply to every feature
 
 1. **Gemini reads, code decides.** Gemini extracts facts (merchant, amount, date), matches transactions and drafts text. Eligibility, allowed actions and anything touching money are decided by deterministic backend code.
 2. **Structured output only.** Every Gemini call returns JSON validated against a shared schema. If validation fails, the UI falls back to an "AI unsure" state.
@@ -22,7 +167,7 @@
 
 ---
 
-## 2. Feature buckets
+## 9. Feature buckets
 
 IDs are stable so we can reference them in issues and PRs.
 
@@ -126,7 +271,7 @@ Real telephony, real bank systems, real money movement, autonomous actions witho
 
 ---
 
-## 3. Milestones
+## 10. Milestones
 
 ### M0: walking skeleton (local)
 
@@ -156,7 +301,7 @@ SHOULD items in order of demo value: S-02 timed comparison → S-04 masking → 
 
 ---
 
-## 4. Google services by feature
+## 11. Google services by feature
 
 | Service | Used for | Features | Bucket |
 |---|---|---|---|
@@ -182,7 +327,7 @@ SHOULD items in order of demo value: S-02 timed comparison → S-04 masking → 
 
 ---
 
-## 5. Starter repo structure
+## 12. Starter repo structure
 
 TypeScript everywhere, npm workspaces. Shared [Zod](https://zod.dev) schemas are the single source of truth for Gemini response formats *and* API request validation.
 
@@ -248,7 +393,7 @@ bank-agent-assist/
 
 ---
 
-## 6. Open decisions
+## 13. Open decisions
 
 | # | Question | Proposed default |
 |---|---|---|
