@@ -11,6 +11,7 @@ When a customer calls, the assistant verifies the caller, briefs the agent, foll
 ## Docs
 
 - [docs/SCOPE.md](docs/SCOPE.md): domain, problem statement, proposal and boundaries; Must / Should / Could buckets, M0 milestone, Google services by feature, starter repo structure
+- [docs/M0.md](docs/M0.md): the starter prototype flow, step by step
 - [docs/BRAINSTORM.md](docs/BRAINSTORM.md): the idea, assessment, architecture options and flows
 - [docs/reference/](docs/reference/): original pitch PDF and the ChatGPT session export
 

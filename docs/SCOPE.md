@@ -275,7 +275,7 @@ Real telephony, real bank systems, real money movement, autonomous actions witho
 
 ### M0: walking skeleton (local)
 
-**Goal:** Scenario A runs end to end on a laptop with real Gemini calls. It proves the core loop: *unstructured conversation → verified, human-approved banking action.*
+**Goal:** Scenario A runs end to end on a laptop with real Gemini calls. Full flow: [M0.md](M0.md). It proves the core loop: *unstructured conversation → verified, human-approved banking action.*
 
 | In M0 | Not in M0 |
 |---|---|
@@ -289,7 +289,7 @@ Real telephony, real bank systems, real money movement, autonomous actions witho
 | M-15 audit log (written + simple list) | |
 | M-16 wrap-up notes | |
 | X-01 unverified, X-02 duplicate, X-06 AI fallback | X-03, X-04, X-05, X-07 |
-| Firestore emulator + seed script | P-01 deployment |
+| In-memory data from JSON, behind a repository interface | Firestore (M1), P-01 deployment |
 
 **Done when:** a teammate can clone the repo, run one command, and complete scenario A. Running it twice shows the duplicate-case path.
 
