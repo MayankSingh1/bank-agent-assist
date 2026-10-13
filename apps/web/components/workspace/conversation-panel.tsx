@@ -1,20 +1,20 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { CircleAlert, Headset, MessagesSquare, Pause, Play, SkipForward } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { CircleAlert, MessagesSquare, Pause, Play, SkipForward } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Kbd } from "@/components/ui/kbd";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { CallFlow } from "@/lib/use-call-flow";
-import { cn, initials, usd } from "@/lib/utils";
+import { cn, usd } from "@/lib/utils";
 import { AiLabel, PanelHeader } from "./kit";
 
 export function ConversationPanel({ flow }: { flow: CallFlow }) {
   const { call, transcript, playing, analyzing, scriptDone, facts, extractError, verified, context } = flow;
   const end = useRef<HTMLDivElement>(null);
   const total = call?.script.length ?? 0;
-  const customerInitials = context ? initials(context.customer.name) : "C";
 
   useEffect(() => {
     end.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -23,28 +23,43 @@ export function ConversationPanel({ flow }: { flow: CallFlow }) {
   const controls = verified && !scriptDone && !flow.wrapUpRequested && (
     <>
       {playing ? (
-        <Button size="sm" variant="outline" onClick={flow.actions.pause}>
-          <Pause /> Pause
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button size="xs" variant="outline" onClick={flow.actions.pause} className="gap-1">
+              <Pause className="size-3" /> Pause
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            Pause <Kbd>Space</Kbd>
+          </TooltipContent>
+        </Tooltip>
       ) : (
-        <Button size="sm" onClick={flow.actions.play}>
-          <Play /> {transcript.length === 0 ? "Play call" : "Resume"}
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button size="xs" onClick={flow.actions.play} className="gap-1">
+              <Play className="size-3" /> {transcript.length === 0 ? "Play" : "Resume"}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            {transcript.length === 0 ? "Play call" : "Resume"} <Kbd>Space</Kbd>
+          </TooltipContent>
+        </Tooltip>
       )}
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            size="icon"
+            size="icon-xs"
             variant="outline"
-            className="size-8"
             onClick={flow.actions.step}
             disabled={playing}
             aria-label="Next line"
           >
-            <SkipForward />
+            <SkipForward className="size-3" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent>Next line</TooltipContent>
+        <TooltipContent>
+          Next line <Kbd>→</Kbd>
+        </TooltipContent>
       </Tooltip>
     </>
   );
@@ -53,78 +68,69 @@ export function ConversationPanel({ flow }: { flow: CallFlow }) {
     <>
       <PanelHeader
         icon={MessagesSquare}
-        title="Conversation"
-        meta={transcript.length > 0 ? `${transcript.length} of ${total} lines` : "Scripted playback"}
+        title="Transcript"
+        meta={transcript.length > 0 ? `${transcript.length}/${total}` : "Playback"}
       >
         {controls}
       </PanelHeader>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+      <div className="min-h-0 flex-1 overflow-y-auto bg-background px-3 py-3 lg:px-4 dark:bg-surface-sunken">
         {transcript.length === 0 ? (
-          <Empty className="h-full">
+          <Empty className="h-full border-0 bg-transparent">
             <EmptyHeader>
               <EmptyMedia variant="icon">
-                <MessagesSquare />
+                <MessagesSquare className="size-5" />
               </EmptyMedia>
-              <EmptyTitle className="text-base">
-                {verified ? "Ready to play the call" : "Waiting for verification"}
-              </EmptyTitle>
-              <EmptyDescription>
-                {verified
-                  ? "Press Play call. The transcript streams in here and the co-pilot listens for the charge."
-                  : "Verify the caller first. The conversation starts once their identity is confirmed."}
+              <EmptyTitle className="text-[14px]">{verified ? "Ready to play" : "Awaiting verification"}</EmptyTitle>
+              <EmptyDescription className="text-[13px]">
+                {verified ? "Press Play. The transcript streams here." : "Verify the caller to start."}
               </EmptyDescription>
             </EmptyHeader>
           </Empty>
         ) : (
-          <div className="mx-auto max-w-2xl space-y-4">
+          <div className="space-y-0.5">
             {transcript.map((t, i) => {
               const agent = t.speaker === "agent";
+              const customerName = context?.customer.name ?? "Customer";
               return (
                 <div
                   key={i}
                   className={cn(
-                    "flex animate-in items-end gap-2.5 duration-300 fade-in-0 slide-in-from-bottom-1",
-                    agent && "flex-row-reverse",
+                    "group rounded px-2 py-1.5 transition-colors hover:bg-muted/50",
+                    "animate-in duration-200 fade-in-0 slide-in-from-bottom-1",
                   )}
                 >
-                  <Avatar className="size-7">
-                    <AvatarFallback
+                  <div className="flex items-baseline gap-2">
+                    <span
                       className={cn(
-                        "text-[10px] font-medium",
-                        agent ? "bg-primary text-primary-foreground" : "border bg-background",
+                        "text-[11px] font-semibold tracking-wide uppercase",
+                        agent ? "text-foreground" : "text-muted-foreground",
                       )}
                     >
-                      {agent ? <Headset className="size-3.5" /> : customerInitials}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className={cn("flex max-w-[80%] flex-col gap-1", agent ? "items-end" : "items-start")}>
-                    <span className="px-1 text-[11px] font-medium text-muted-foreground">
-                      {agent ? "You" : (context?.customer.name ?? "Customer")}
+                      {agent ? "Agent" : customerName.split(" ")[0]}
                     </span>
-                    <div
-                      className={cn(
-                        "rounded-2xl px-3.5 py-2 text-sm leading-relaxed",
-                        agent
-                          ? "rounded-br-md bg-primary text-primary-foreground"
-                          : "rounded-bl-md border bg-card shadow-xs",
-                      )}
-                    >
-                      {t.text}
-                    </div>
+                    <span className="font-mono text-[11px] text-muted-foreground/60 tabular-nums opacity-0 transition-opacity group-hover:opacity-100">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
                   </div>
+                  <p className="mt-0.5 text-[14px] leading-relaxed text-foreground">{t.text}</p>
                 </div>
               );
             })}
             {analyzing && (
-              <div className="flex items-center gap-2 pl-10">
-                <AiLabel className="animate-pulse">Listening for details…</AiLabel>
+              <div className="flex items-center gap-2 px-2 py-2">
+                <div className="flex gap-1">
+                  <span className="size-1.5 animate-pulse rounded-full bg-ai" />
+                  <span className="size-1.5 animate-pulse rounded-full bg-ai [animation-delay:150ms]" />
+                  <span className="size-1.5 animate-pulse rounded-full bg-ai [animation-delay:300ms]" />
+                </div>
+                <span className="text-[13px] font-medium text-ai">Listening…</span>
               </div>
             )}
             {scriptDone && (
-              <div className="flex items-center gap-3 pt-2 text-[11px] text-muted-foreground">
+              <div className="flex items-center gap-2 px-2 py-3 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
                 <span className="h-px flex-1 bg-border" />
-                End of scripted call
+                End
                 <span className="h-px flex-1 bg-border" />
               </div>
             )}
@@ -134,24 +140,23 @@ export function ConversationPanel({ flow }: { flow: CallFlow }) {
       </div>
 
       {(facts || extractError) && (
-        <div className="shrink-0 border-t bg-surface px-4 py-3 sm:px-6">
-          <div className="mx-auto max-w-2xl">
-            <AiLabel className="mb-2">Details heard</AiLabel>
+        <div className="shrink-0 border-t border-border bg-surface px-3 py-2.5 lg:px-4 dark:bg-surface-elevated">
+          <div className="flex items-start gap-3">
+            <AiLabel className="shrink-0 text-[11px]">Extracted</AiLabel>
             {extractError && !facts ? (
-              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <CircleAlert className="size-3.5 text-warning" /> AI couldn’t read the call. Pick the transaction from
-                the list.
+              <p className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
+                <CircleAlert className="size-3.5 text-warning" /> Could not parse. Select manually.
               </p>
+            ) : facts ? (
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-[13px]">
+                <Fact label="Merchant" value={facts.merchant} />
+                <Fact label="Amount" value={facts.amount != null ? `~${usd(facts.amount)}` : null} />
+                <Fact label="When" value={facts.approxDaysAgo != null ? `${facts.approxDaysAgo}d ago` : null} />
+                <Fact label="Recognises" value={yesNo(facts.customerRecognises)} />
+                <Fact label="Has card" value={yesNo(facts.cardInPossession)} />
+              </div>
             ) : (
-              facts && (
-                <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5 sm:grid-cols-5">
-                  <Fact label="Merchant" value={facts.merchant} />
-                  <Fact label="Amount" value={facts.amount != null ? `~${usd(facts.amount)}` : null} />
-                  <Fact label="When" value={facts.approxDaysAgo != null ? `~${facts.approxDaysAgo} days ago` : null} />
-                  <Fact label="Recognises it" value={yesNo(facts.customerRecognises)} />
-                  <Fact label="Has card" value={yesNo(facts.cardInPossession)} />
-                </dl>
-              )
+              <Skeleton className="h-5 w-48" />
             )}
           </div>
         </div>
@@ -164,9 +169,9 @@ const yesNo = (v: boolean | null) => (v == null ? null : v ? "Yes" : "No");
 
 function Fact({ label, value }: { label: string; value: string | null }) {
   return (
-    <div className="min-w-0">
-      <dt className="text-[11px] text-muted-foreground">{label}</dt>
-      <dd className={cn("truncate text-sm font-medium", !value && "text-muted-foreground/50")}>{value ?? "—"}</dd>
-    </div>
+    <span className="inline-flex items-baseline gap-1">
+      <span className="text-muted-foreground">{label}</span>
+      <span className={cn("font-medium", !value && "text-muted-foreground/50")}>{value ?? "—"}</span>
+    </span>
   );
 }
