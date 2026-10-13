@@ -3,7 +3,7 @@ import { CircleCheck, CircleX, Sparkles } from "lucide-react";
 import type { Transaction } from "@baa/core";
 import { cn, daysAgo, shortDate, usd } from "@/lib/utils";
 
-/** Header shared by the three workspace columns, so they line up and read the same. */
+/** Header shared by the three workspace columns - compact, flat design. */
 export function PanelHeader({
   icon: Icon,
   title,
@@ -16,10 +16,12 @@ export function PanelHeader({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="flex h-12 shrink-0 items-center gap-2 border-b bg-background/80 px-4 backdrop-blur">
-      <Icon className="size-4 text-muted-foreground" />
-      <h2 className="text-sm font-semibold">{title}</h2>
-      {meta && <span className="truncate text-xs text-muted-foreground">{meta}</span>}
+    <div className="flex h-10 shrink-0 items-center gap-2 border-b border-border bg-surface px-3 dark:bg-surface-elevated">
+      <Icon className="size-3.5 text-muted-foreground" />
+      <h2 className="text-[13px] font-medium text-foreground">{title}</h2>
+      {meta && (
+        <span className="truncate text-[11px] font-medium tracking-wide text-muted-foreground uppercase">{meta}</span>
+      )}
       {children && <div className="ml-auto flex items-center gap-1.5">{children}</div>}
     </div>
   );
