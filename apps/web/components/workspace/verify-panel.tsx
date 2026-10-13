@@ -28,17 +28,17 @@ export function VerifyPanel({ flow }: { flow: CallFlow }) {
         <Eyebrow icon={PhoneIncoming} className="mb-2">
           Incoming
         </Eyebrow>
-        <div className="font-mono text-[14px] font-semibold tracking-tight tabular-nums">{call.caller.phone}</div>
-        <dl className="mt-3 space-y-1.5 border-t border-border pt-3 text-[12px]">
-          <KeyValue label="Customer" className="text-[12px]">
+        <div className="font-mono text-[15px] font-semibold tracking-tight tabular-nums">{call.caller.phone}</div>
+        <dl className="mt-3 space-y-1.5 border-t border-border pt-3 text-[13px]">
+          <KeyValue label="Customer" className="text-[13px]">
             {call.caller.maskedName}
           </KeyValue>
-          <KeyValue label="Card" className="text-[12px]">
+          <KeyValue label="Card" className="text-[13px]">
             <span className="font-mono">{call.caller.maskedCard}</span>
           </KeyValue>
         </dl>
-        <p className="mt-3 flex items-center gap-1.5 text-[10px] text-muted-foreground">
-          <Lock className="size-3" /> Details hidden until verified
+        <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <Lock className="size-3.5" /> Details hidden until verified
         </p>
       </div>
 
@@ -55,24 +55,24 @@ export function VerifyPanel({ flow }: { flow: CallFlow }) {
         >
           <FieldGroup className="gap-3">
             <Field data-disabled={verify.locked || undefined}>
-              <FieldLabel className="text-[11px]">Date of birth</FieldLabel>
+              <FieldLabel className="text-[13px]">Date of birth</FieldLabel>
               <Input
                 type="date"
                 value={dob}
                 onChange={(e) => setDob(e.target.value)}
                 disabled={verify.locked}
                 required
-                className="h-8 text-[12px]"
+                className="h-9 text-[13px]"
               />
             </Field>
             <Field data-disabled={verify.locked || undefined}>
-              <FieldLabel className="text-[11px]">Card last 4</FieldLabel>
+              <FieldLabel className="text-[13px]">Card last 4</FieldLabel>
               <Input
                 inputMode="numeric"
                 autoComplete="off"
                 maxLength={4}
                 placeholder="0000"
-                className="h-8 font-mono text-[12px] tracking-widest"
+                className="h-9 font-mono text-[13px] tracking-widest"
                 value={last4}
                 onChange={(e) => setLast4(e.target.value.replace(/\D/g, ""))}
                 disabled={verify.locked}
@@ -82,9 +82,9 @@ export function VerifyPanel({ flow }: { flow: CallFlow }) {
 
             {verify.error && (
               <Alert variant={verify.locked ? "destructive" : "warning"} className="py-2">
-                <ShieldAlert className="size-3.5" />
-                <AlertTitle className="text-[12px]">{verify.locked ? "Locked" : "Failed"}</AlertTitle>
-                <AlertDescription className="text-[11px]">
+                <ShieldAlert className="size-4" />
+                <AlertTitle className="text-[13px]">{verify.locked ? "Locked" : "Failed"}</AlertTitle>
+                <AlertDescription className="text-[13px]">
                   {verify.error}
                   {!verify.locked && ` ${verify.attemptsLeft} left.`}
                 </AlertDescription>
@@ -99,7 +99,7 @@ export function VerifyPanel({ flow }: { flow: CallFlow }) {
                   className="w-full gap-1.5"
                   disabled={verify.locked || submitting || dob === "" || last4.length !== 4}
                 >
-                  {submitting ? <Spinner className="size-3" /> : <ShieldCheck className="size-3.5" />}
+                  {submitting ? <Spinner className="size-3.5" /> : <ShieldCheck className="size-4" />}
                   Verify
                 </Button>
               </TooltipTrigger>
@@ -112,14 +112,14 @@ export function VerifyPanel({ flow }: { flow: CallFlow }) {
       </div>
 
       {/* Demo helper */}
-      <div className="flex items-center justify-between rounded-lg border border-dashed border-border px-3 py-2 text-[11px] text-muted-foreground">
+      <div className="flex items-center justify-between rounded-lg border border-dashed border-border px-3 py-2 text-[13px] text-muted-foreground">
         <span className="flex flex-wrap items-center gap-1">
-          Demo <Kbd className="h-4 text-[9px]">{DEMO.dob}</Kbd> <Kbd className="h-4 text-[9px]">{DEMO.last4}</Kbd>
+          Demo <Kbd className="h-5 text-[11px]">{DEMO.dob}</Kbd> <Kbd className="h-5 text-[11px]">{DEMO.last4}</Kbd>
         </span>
         <Button
           variant="ghost"
           size="xs"
-          className="h-5 px-1.5 text-[10px]"
+          className="h-6 px-2 text-[11px]"
           disabled={verify.locked}
           onClick={() => {
             setDob(DEMO.dob);

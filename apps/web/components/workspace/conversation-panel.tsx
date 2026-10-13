@@ -81,8 +81,8 @@ export function ConversationPanel({ flow }: { flow: CallFlow }) {
               <EmptyMedia variant="icon">
                 <MessagesSquare className="size-5" />
               </EmptyMedia>
-              <EmptyTitle className="text-[13px]">{verified ? "Ready to play" : "Awaiting verification"}</EmptyTitle>
-              <EmptyDescription className="text-[12px]">
+              <EmptyTitle className="text-[14px]">{verified ? "Ready to play" : "Awaiting verification"}</EmptyTitle>
+              <EmptyDescription className="text-[13px]">
                 {verified ? "Press Play. The transcript streams here." : "Verify the caller to start."}
               </EmptyDescription>
             </EmptyHeader>
@@ -103,17 +103,17 @@ export function ConversationPanel({ flow }: { flow: CallFlow }) {
                   <div className="flex items-baseline gap-2">
                     <span
                       className={cn(
-                        "text-[10px] font-semibold tracking-wide uppercase",
+                        "text-[11px] font-semibold tracking-wide uppercase",
                         agent ? "text-foreground" : "text-muted-foreground",
                       )}
                     >
                       {agent ? "Agent" : customerName.split(" ")[0]}
                     </span>
-                    <span className="font-mono text-[10px] text-muted-foreground/60 tabular-nums opacity-0 transition-opacity group-hover:opacity-100">
+                    <span className="font-mono text-[11px] text-muted-foreground/60 tabular-nums opacity-0 transition-opacity group-hover:opacity-100">
                       {String(i + 1).padStart(2, "0")}
                     </span>
                   </div>
-                  <p className="mt-0.5 text-[13px] leading-relaxed text-foreground/90">{t.text}</p>
+                  <p className="mt-0.5 text-[14px] leading-relaxed text-foreground">{t.text}</p>
                 </div>
               );
             })}
@@ -124,11 +124,11 @@ export function ConversationPanel({ flow }: { flow: CallFlow }) {
                   <span className="size-1.5 animate-pulse rounded-full bg-ai [animation-delay:150ms]" />
                   <span className="size-1.5 animate-pulse rounded-full bg-ai [animation-delay:300ms]" />
                 </div>
-                <span className="text-[11px] font-medium text-ai">Listening…</span>
+                <span className="text-[13px] font-medium text-ai">Listening…</span>
               </div>
             )}
             {scriptDone && (
-              <div className="flex items-center gap-2 px-2 py-3 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+              <div className="flex items-center gap-2 px-2 py-3 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
                 <span className="h-px flex-1 bg-border" />
                 End
                 <span className="h-px flex-1 bg-border" />
@@ -140,15 +140,15 @@ export function ConversationPanel({ flow }: { flow: CallFlow }) {
       </div>
 
       {(facts || extractError) && (
-        <div className="shrink-0 border-t border-border bg-surface px-3 py-2 lg:px-4 dark:bg-surface-elevated">
+        <div className="shrink-0 border-t border-border bg-surface px-3 py-2.5 lg:px-4 dark:bg-surface-elevated">
           <div className="flex items-start gap-3">
-            <AiLabel className="shrink-0 text-[10px]">Extracted</AiLabel>
+            <AiLabel className="shrink-0 text-[11px]">Extracted</AiLabel>
             {extractError && !facts ? (
-              <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                <CircleAlert className="size-3 text-warning" /> Could not parse. Select manually.
+              <p className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
+                <CircleAlert className="size-3.5 text-warning" /> Could not parse. Select manually.
               </p>
             ) : facts ? (
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-[13px]">
                 <Fact label="Merchant" value={facts.merchant} />
                 <Fact label="Amount" value={facts.amount != null ? `~${usd(facts.amount)}` : null} />
                 <Fact label="When" value={facts.approxDaysAgo != null ? `${facts.approxDaysAgo}d ago` : null} />
@@ -156,7 +156,7 @@ export function ConversationPanel({ flow }: { flow: CallFlow }) {
                 <Fact label="Has card" value={yesNo(facts.cardInPossession)} />
               </div>
             ) : (
-              <Skeleton className="h-4 w-48" />
+              <Skeleton className="h-5 w-48" />
             )}
           </div>
         </div>

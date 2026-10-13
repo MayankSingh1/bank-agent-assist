@@ -38,8 +38,8 @@ export function CustomerPanel({ flow }: { flow: CallFlow }) {
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-[13px] font-semibold">{customer.name}</div>
-            <div className="text-[11px] text-muted-foreground">
+            <div className="truncate text-[14px] font-semibold">{customer.name}</div>
+            <div className="text-[13px] text-muted-foreground">
               {customer.segment} · {customer.city}
             </div>
           </div>
@@ -47,14 +47,14 @@ export function CustomerPanel({ flow }: { flow: CallFlow }) {
         <div className="mt-3 border-t border-border pt-3">
           <div className="flex items-center gap-2">
             <CreditCard className="size-3.5 text-muted-foreground" />
-            <span className="text-[12px] font-medium">{card.product}</span>
-            <span className="font-mono text-[11px] text-muted-foreground">•••• {card.last4}</span>
-            <Badge variant={card.status === "active" ? "success" : "destructive"} className="ml-auto h-4 text-[9px]">
+            <span className="text-[13px] font-medium">{card.product}</span>
+            <span className="font-mono text-[13px] text-muted-foreground">•••• {card.last4}</span>
+            <Badge variant={card.status === "active" ? "success" : "destructive"} className="ml-auto h-5 text-[11px]">
               {card.status}
             </Badge>
           </div>
           <div className="mt-2 space-y-1">
-            <div className="flex items-baseline justify-between text-[11px]">
+            <div className="flex items-baseline justify-between text-[13px]">
               <span className="text-muted-foreground">Balance</span>
               <span className="font-mono tabular-nums">
                 <span className="font-medium">{usd(card.balance)}</span>
@@ -68,22 +68,22 @@ export function CustomerPanel({ flow }: { flow: CallFlow }) {
 
       {/* AI Briefing */}
       <div className="rounded-lg border border-ai/20 bg-ai-soft/30 p-3">
-        <AiLabel className="mb-2 text-[10px]">Briefing</AiLabel>
+        <AiLabel className="mb-2 text-[11px]">Briefing</AiLabel>
         {!briefing ? (
           <div className="space-y-1.5">
-            <Skeleton className="h-3 w-full bg-ai/10" />
-            <Skeleton className="h-3 w-4/5 bg-ai/10" />
-            <Skeleton className="h-3 w-3/5 bg-ai/10" />
+            <Skeleton className="h-4 w-full bg-ai/10" />
+            <Skeleton className="h-4 w-4/5 bg-ai/10" />
+            <Skeleton className="h-4 w-3/5 bg-ai/10" />
           </div>
         ) : briefing.ok ? (
           <div className="space-y-2">
-            <p className="text-[12px] leading-relaxed text-foreground/90">{briefing.data.summary}</p>
+            <p className="text-[13px] leading-relaxed text-foreground">{briefing.data.summary}</p>
             <ul className="space-y-2">
               {briefing.data.highlights.map((h, i) => (
                 <li key={i} className="flex gap-2">
-                  <span className="mt-1.5 size-1 shrink-0 rounded-full bg-ai/70" />
+                  <span className="mt-2 size-1 shrink-0 rounded-full bg-ai/70" />
                   <div className="min-w-0 space-y-1">
-                    <p className="text-[12px] leading-relaxed text-foreground/80">{h.text}</p>
+                    <p className="text-[13px] leading-relaxed text-foreground/90">{h.text}</p>
                     <EvidenceChips ids={h.evidenceIds} />
                   </div>
                 </li>
@@ -91,8 +91,8 @@ export function CustomerPanel({ flow }: { flow: CallFlow }) {
             </ul>
           </div>
         ) : (
-          <p className="flex items-start gap-2 text-[12px] text-muted-foreground">
-            <CircleAlert className="mt-0.5 size-3.5 shrink-0 text-warning" />
+          <p className="flex items-start gap-2 text-[13px] text-muted-foreground">
+            <CircleAlert className="mt-0.5 size-4 shrink-0 text-warning" />
             AI briefing unavailable. Account details are complete.
           </p>
         )}
@@ -103,12 +103,12 @@ export function CustomerPanel({ flow }: { flow: CallFlow }) {
         <div className="flex items-center justify-between border-b border-border px-3 py-2">
           <div>
             <div className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">Transactions</div>
-            <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <FolderOpen className="size-3" />
+            <div className="mt-0.5 flex items-center gap-1.5 text-[13px] text-muted-foreground">
+              <FolderOpen className="size-3.5" />
               {openCases.length === 0 ? "No cases" : `${openCases.length} open`}
             </div>
           </div>
-          <span className="font-mono text-[11px] text-muted-foreground tabular-nums">{transactions.length}</span>
+          <span className="font-mono text-[13px] text-muted-foreground tabular-nums">{transactions.length}</span>
         </div>
         <div className="max-h-64 overflow-y-auto p-1.5 lg:max-h-none">
           <ul className="space-y-0.5">
@@ -158,29 +158,29 @@ function TransactionRow({ t, flow, hasCase }: { t: Transaction; flow: CallFlow; 
       >
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <span className="truncate text-[12px] font-medium">{t.merchant}</span>
+            <span className="truncate text-[13px] font-medium">{t.merchant}</span>
             {t.status === "pending" && (
-              <Badge variant="outline" className="h-3.5 px-1 text-[8px]">
+              <Badge variant="outline" className="h-4 px-1 text-[11px]">
                 Pending
               </Badge>
             )}
             {hasCase && (
-              <Badge variant="warning" className="h-3.5 px-1 text-[8px]">
+              <Badge variant="warning" className="h-4 px-1 text-[11px]">
                 Disputed
               </Badge>
             )}
             {matched && !hasCase && (
-              <Badge variant="ai" className="h-3.5 px-1 text-[8px]">
+              <Badge variant="ai" className="h-4 px-1 text-[11px]">
                 Match
               </Badge>
             )}
           </div>
-          <div className="mt-0.5 truncate text-[10px] text-muted-foreground">
+          <div className="mt-0.5 truncate text-[11px] text-muted-foreground">
             {daysAgo(t.daysAgo)} · {t.category}
             {t.channel === "online" && " · Online"}
           </div>
         </div>
-        <Amount value={t.amount} className="text-[12px]" />
+        <Amount value={t.amount} className="text-[13px]" />
       </button>
     </li>
   );

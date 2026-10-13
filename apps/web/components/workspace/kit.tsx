@@ -98,13 +98,13 @@ export function TransactionSummary({ t, className }: { t: Transaction; className
   return (
     <div className={cn("flex items-start justify-between gap-3", className)}>
       <div className="min-w-0">
-        <div className="truncate text-sm font-medium">{t.merchant}</div>
-        <div className="text-xs text-muted-foreground">
+        <div className="truncate text-[14px] font-medium">{t.merchant}</div>
+        <div className="text-[13px] text-muted-foreground">
           {shortDate(t.date)} · {daysAgo(t.daysAgo)} · {t.channel === "online" ? "Online" : "In store"} ·{" "}
           <span className="capitalize">{t.status}</span>
         </div>
       </div>
-      <Amount value={t.amount} className="text-base font-semibold" />
+      <Amount value={t.amount} className="text-[15px] font-semibold" />
     </div>
   );
 }

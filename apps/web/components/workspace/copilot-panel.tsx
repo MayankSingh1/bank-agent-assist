@@ -127,8 +127,8 @@ function PanelEmpty({ icon: Icon, title, text }: { icon: React.ComponentType; ti
         <EmptyMedia variant="icon">
           <Icon />
         </EmptyMedia>
-        <EmptyTitle className="text-[13px]">{title}</EmptyTitle>
-        <EmptyDescription className="text-[11px]">{text}</EmptyDescription>
+        <EmptyTitle className="text-[14px]">{title}</EmptyTitle>
+        <EmptyDescription className="text-[13px]">{text}</EmptyDescription>
       </EmptyHeader>
     </Empty>
   );
@@ -151,14 +151,14 @@ function IssueTypeCard() {
       <ToggleGroup type="single" value="unrecognised_charge" variant="outline" size="sm" className="flex-wrap gap-1">
         {ISSUE_TYPES.map((t) =>
           t.available ? (
-            <ToggleGroupItem key={t.id} value={t.id} className={cn("h-6 rounded px-2 text-[11px]", SEGMENT_ON)}>
+            <ToggleGroupItem key={t.id} value={t.id} className={cn("h-7 rounded px-2.5 text-[13px]", SEGMENT_ON)}>
               {t.label}
             </ToggleGroupItem>
           ) : (
             <Tooltip key={t.id}>
               <TooltipTrigger asChild>
                 <span tabIndex={0} className="rounded outline-none focus-visible:ring-1 focus-visible:ring-ring">
-                  <ToggleGroupItem value={t.id} disabled className="h-6 rounded px-2 text-[11px]">
+                  <ToggleGroupItem value={t.id} disabled className="h-7 rounded px-2.5 text-[13px]">
                     {t.label}
                   </ToggleGroupItem>
                 </span>
@@ -181,9 +181,9 @@ function ListeningCard() {
           <span className="size-1.5 animate-pulse rounded-full bg-ai [animation-delay:150ms]" />
           <span className="size-1.5 animate-pulse rounded-full bg-ai [animation-delay:300ms]" />
         </div>
-        <AiLabel className="text-[11px]">Listening for transaction…</AiLabel>
+        <AiLabel className="text-[13px]">Listening for transaction…</AiLabel>
       </div>
-      <Skeleton className="mt-3 h-12 w-full rounded bg-ai/10" />
+      <Skeleton className="mt-3 h-14 w-full rounded bg-ai/10" />
     </SectionCard>
   );
 }
@@ -198,31 +198,31 @@ function MatchCard({ flow, selected }: { flow: CallFlow; selected: Transaction |
       <div className="mb-2 flex items-center justify-between">
         <Eyebrow>Transaction</Eyebrow>
         {match && (
-          <Badge variant="ai" className="h-4 text-[9px]">
-            <Sparkles className="size-2.5" /> Matched
+          <Badge variant="ai" className="h-5 text-[11px]">
+            <Sparkles className="size-3" /> Matched
           </Badge>
         )}
       </div>
 
       {flow.extractError && flow.matches.length === 0 && (
         <Alert variant="warning" className="mb-2 py-2">
-          <CircleAlert className="size-3.5" />
-          <AlertDescription className="text-[11px]">AI could not match. Ask customer for details.</AlertDescription>
+          <CircleAlert className="size-4" />
+          <AlertDescription className="text-[13px]">AI could not match. Ask customer for details.</AlertDescription>
         </Alert>
       )}
 
       {selected ? (
         <div
-          className="rounded border border-border bg-surface p-2"
+          className="rounded border border-border bg-surface p-2.5"
           onMouseEnter={() => highlight(selected.id)}
           onMouseLeave={() => highlight(null)}
         >
-          <TransactionSummary t={selected} className="text-[12px]" />
+          <TransactionSummary t={selected} />
           {match && match.reasons.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1.5 border-t border-border pt-2">
+            <div className="mt-2 flex flex-wrap gap-2 border-t border-border pt-2">
               {match.reasons.map((r) => (
-                <span key={r} className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                  <Check className="size-2.5 text-ai" />
+                <span key={r} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground">
+                  <Check className="size-3 text-ai" />
                   {r}
                 </span>
               ))}
@@ -230,12 +230,12 @@ function MatchCard({ flow, selected }: { flow: CallFlow; selected: Transaction |
           )}
         </div>
       ) : (
-        !flow.extractError && <p className="text-[11px] text-muted-foreground">Select from transactions list.</p>
+        !flow.extractError && <p className="text-[13px] text-muted-foreground">Select from transactions list.</p>
       )}
 
       {others.length > 0 && (
         <div className="mt-2 space-y-1">
-          <Eyebrow className="text-[9px]">Other matches</Eyebrow>
+          <Eyebrow>Other matches</Eyebrow>
           {others.map((m) => {
             const t = flow.context?.transactions.find((x) => x.id === m.transactionId);
             if (!t) return null;
@@ -244,10 +244,10 @@ function MatchCard({ flow, selected }: { flow: CallFlow; selected: Transaction |
                 key={m.transactionId}
                 type="button"
                 onClick={() => flow.actions.selectTransaction(t.id)}
-                className="flex w-full items-center justify-between rounded border border-border px-2 py-1.5 text-[11px] transition-colors hover:bg-muted/60"
+                className="flex w-full items-center justify-between rounded border border-border px-2.5 py-2 text-[13px] transition-colors hover:bg-muted/60"
               >
                 <span className="truncate">{t.merchant}</span>
-                <Amount value={t.amount} className="text-[11px]" />
+                <Amount value={t.amount} className="text-[13px]" />
               </button>
             );
           })}
@@ -262,7 +262,7 @@ function MatchCard({ flow, selected }: { flow: CallFlow; selected: Transaction |
             disabled={!selected || flow.confirming}
             onClick={flow.actions.confirmTransaction}
           >
-            {flow.confirming ? <Spinner className="size-3" /> : <CircleCheck className="size-3.5" />}
+            {flow.confirming ? <Spinner className="size-3.5" /> : <CircleCheck className="size-4" />}
             Customer confirmed
           </Button>
         </TooltipTrigger>
@@ -277,9 +277,9 @@ function MatchCard({ flow, selected }: { flow: CallFlow; selected: Transaction |
 function ConfirmedSummary({ flow }: { flow: CallFlow }) {
   const t = flow.confirmed!.transaction;
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success-soft/30 px-3 py-2">
-      <CircleCheck className="size-3.5 shrink-0 text-success" />
-      <div className="min-w-0 flex-1 text-[11px]">
+    <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success-soft/30 px-3 py-2.5">
+      <CircleCheck className="size-4 shrink-0 text-success" />
+      <div className="min-w-0 flex-1 text-[13px]">
         <span className="font-medium">
           <Amount value={t.amount} /> · {t.merchant}
         </span>
@@ -303,22 +303,22 @@ function EligibilityCard({ flow }: { flow: CallFlow }) {
       >
         <div className="flex items-center gap-2">
           <Eyebrow>Eligibility</Eyebrow>
-          <Badge variant={eligibility.eligible ? "success" : "warning"} className="h-4 text-[9px]">
+          <Badge variant={eligibility.eligible ? "success" : "warning"} className="h-5 text-[11px]">
             {eligibility.eligible ? "Eligible" : "Not eligible"}
           </Badge>
         </div>
-        <ChevronDown className={cn("size-3.5 text-muted-foreground transition-transform", expanded && "rotate-180")} />
+        <ChevronDown className={cn("size-4 text-muted-foreground transition-transform", expanded && "rotate-180")} />
       </button>
 
       {expanded && (
-        <div className="mt-2 space-y-1.5">
-          <p className="text-[10px] text-muted-foreground">
+        <div className="mt-2 space-y-2">
+          <p className="text-[11px] tracking-wide text-muted-foreground uppercase">
             Policy <span className="font-mono">{eligibility.policyId}</span>
           </p>
-          <ul className="space-y-1">
+          <ul className="space-y-1.5">
             {eligibility.checks.map((c) => (
-              <li key={c.clauseId} className="flex items-start gap-2 text-[11px]">
-                <CheckIcon passed={c.passed} className="mt-0.5 size-3" />
+              <li key={c.clauseId} className="flex items-start gap-2 text-[13px]">
+                <CheckIcon passed={c.passed} className="mt-0.5 size-4" />
                 <div className="min-w-0 flex-1">
                   <span className={cn(!c.passed && "text-destructive")}>{c.label}</span>
                   <span className="ml-1 text-muted-foreground">· {c.detail}</span>
@@ -335,13 +335,11 @@ function EligibilityCard({ flow }: { flow: CallFlow }) {
 function ScriptLines({ lines }: { lines: { text: string; evidenceIds: string[] }[] }) {
   return (
     <div className="space-y-2">
-      <Eyebrow icon={MessageSquareQuote} className="text-[9px]">
-        Say to customer
-      </Eyebrow>
+      <Eyebrow icon={MessageSquareQuote}>Say to customer</Eyebrow>
       {lines.map((l, i) => (
         <blockquote
           key={i}
-          className="space-y-1.5 rounded border border-l-2 border-ai/30 border-l-ai bg-surface px-2.5 py-2 text-[12px]"
+          className="space-y-1.5 rounded border border-l-2 border-ai/30 border-l-ai bg-surface px-3 py-2.5 text-[13px]"
         >
           <p className="leading-relaxed">&ldquo;{l.text}&rdquo;</p>
           <EvidenceChips ids={l.evidenceIds} />
@@ -358,8 +356,8 @@ function RecommendationCard({ flow }: { flow: CallFlow }) {
   if (!rec?.ok)
     return (
       <Alert variant="warning" className="py-2">
-        <CircleAlert className="size-3.5" />
-        <AlertDescription className="text-[11px]">AI recommendation unavailable. Follow policy DSP-1.</AlertDescription>
+        <CircleAlert className="size-4" />
+        <AlertDescription className="text-[13px]">AI recommendation unavailable. Follow policy DSP-1.</AlertDescription>
       </Alert>
     );
 
@@ -370,16 +368,16 @@ function RecommendationCard({ flow }: { flow: CallFlow }) {
         onClick={() => setExpanded(!expanded)}
         className="flex w-full items-center justify-between text-left"
       >
-        <AiLabel className="text-[11px]">Recommended steps</AiLabel>
-        <ChevronDown className={cn("size-3.5 text-muted-foreground transition-transform", expanded && "rotate-180")} />
+        <AiLabel className="text-[13px]">Recommended steps</AiLabel>
+        <ChevronDown className={cn("size-4 text-muted-foreground transition-transform", expanded && "rotate-180")} />
       </button>
 
       {expanded && (
         <div className="mt-3 space-y-3">
           <ol className="space-y-2">
             {rec.data.steps.map((s, i) => (
-              <li key={i} className="flex gap-2 text-[11px]">
-                <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-ai text-[9px] font-semibold text-background tabular-nums">
+              <li key={i} className="flex gap-2 text-[13px]">
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-ai text-[11px] font-semibold text-background tabular-nums">
                   {i + 1}
                 </span>
                 <div className="min-w-0 space-y-1">
@@ -414,26 +412,26 @@ function DisputeFormCard({ flow, transaction }: { flow: CallFlow; transaction: T
       <div className="mb-2 flex items-center justify-between">
         <Eyebrow>Dispute form</Eyebrow>
         {prefill && (
-          <Badge variant="ai" className="h-4 text-[9px]">
-            <Sparkles className="size-2.5" /> Pre-filled
+          <Badge variant="ai" className="h-5 text-[11px]">
+            <Sparkles className="size-3" /> Pre-filled
           </Badge>
         )}
       </div>
 
       <FieldGroup className="gap-3">
-        <div className="rounded border border-border bg-surface p-2">
-          <TransactionSummary t={transaction} className="text-[11px]" />
+        <div className="rounded border border-border bg-surface p-2.5">
+          <TransactionSummary t={transaction} />
         </div>
 
         <Field>
-          <FieldLabel className="text-[11px]">Reason</FieldLabel>
+          <FieldLabel className="text-[13px]">Reason</FieldLabel>
           <Select value={form.reason} onValueChange={(v) => setForm({ ...form, reason: v as DisputeReason })}>
-            <SelectTrigger className="h-8 text-[12px]">
+            <SelectTrigger className="h-9 text-[13px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {REASONS.map((r) => (
-                <SelectItem key={r.id} value={r.id} className="text-[12px]">
+                <SelectItem key={r.id} value={r.id} className="text-[13px]">
                   {r.label}
                 </SelectItem>
               ))}
@@ -442,21 +440,21 @@ function DisputeFormCard({ flow, transaction }: { flow: CallFlow; transaction: T
         </Field>
 
         <Field data-invalid={(!statementOk && form.customerStatement.length > 0) || undefined}>
-          <FieldLabel className="text-[11px]">Customer statement</FieldLabel>
+          <FieldLabel className="text-[13px]">Customer statement</FieldLabel>
           <Textarea
             rows={2}
             value={form.customerStatement}
             onChange={(e) => setForm({ ...form, customerStatement: e.target.value })}
-            className="text-[12px] leading-relaxed"
+            className="text-[13px] leading-relaxed"
           />
-          <FieldDescription className="flex justify-between text-[10px]">
+          <FieldDescription className="flex justify-between text-[11px]">
             <span>Min 10 chars</span>
             <span className="font-mono tabular-nums">{form.customerStatement.trim().length}</span>
           </FieldDescription>
         </Field>
 
         <Field orientation="horizontal" className="justify-between">
-          <FieldLabel className="text-[11px]">Card with customer?</FieldLabel>
+          <FieldLabel className="text-[13px]">Card with customer?</FieldLabel>
           <ToggleGroup
             type="single"
             variant="outline"
@@ -464,10 +462,10 @@ function DisputeFormCard({ flow, transaction }: { flow: CallFlow; transaction: T
             value={form.cardInPossession ? "yes" : "no"}
             onValueChange={(v) => v && setForm({ ...form, cardInPossession: v === "yes" })}
           >
-            <ToggleGroupItem value="yes" className={cn("h-6 px-3 text-[11px]", SEGMENT_ON)}>
+            <ToggleGroupItem value="yes" className={cn("h-7 px-3 text-[13px]", SEGMENT_ON)}>
               Yes
             </ToggleGroupItem>
-            <ToggleGroupItem value="no" className={cn("h-6 px-3 text-[11px]", SEGMENT_ON)}>
+            <ToggleGroupItem value="no" className={cn("h-7 px-3 text-[13px]", SEGMENT_ON)}>
               No
             </ToggleGroupItem>
           </ToggleGroup>
@@ -477,7 +475,7 @@ function DisputeFormCard({ flow, transaction }: { flow: CallFlow; transaction: T
       <Tooltip>
         <TooltipTrigger asChild>
           <Button className="mt-3 w-full gap-1.5" size="sm" disabled={!statementOk} onClick={() => setReviewing(true)}>
-            Review & approve <ArrowRight className="size-3" />
+            Review & approve <ArrowRight className="size-3.5" />
           </Button>
         </TooltipTrigger>
         <TooltipContent>
@@ -489,16 +487,16 @@ function DisputeFormCard({ flow, transaction }: { flow: CallFlow; transaction: T
       <Dialog open={reviewing} onOpenChange={setReviewing}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-[14px]">Approve dispute</DialogTitle>
-            <DialogDescription className="text-[12px]">
+            <DialogTitle className="text-[15px]">Approve dispute</DialogTitle>
+            <DialogDescription className="text-[13px]">
               Creates a case in the bank system. You are approving as agent.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3 text-[12px]">
-            <div className="rounded border border-border bg-surface p-2">
-              <TransactionSummary t={transaction} className="text-[11px]" />
+          <div className="space-y-3 text-[13px]">
+            <div className="rounded border border-border bg-surface p-2.5">
+              <TransactionSummary t={transaction} />
             </div>
-            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-[11px]">
+            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-[13px]">
               <dt className="text-muted-foreground">Reason</dt>
               <dd>{reasonLabel}</dd>
               <dt className="text-muted-foreground">Card with customer</dt>
@@ -507,7 +505,7 @@ function DisputeFormCard({ flow, transaction }: { flow: CallFlow; transaction: T
               <dd className="leading-relaxed">&ldquo;{form.customerStatement.trim()}&rdquo;</dd>
               <dt className="text-muted-foreground">Policy</dt>
               <dd className="flex items-center gap-1 text-success">
-                <CircleCheck className="size-3" /> Passed
+                <CircleCheck className="size-4" /> Passed
               </dd>
             </dl>
           </div>
@@ -522,7 +520,7 @@ function DisputeFormCard({ flow, transaction }: { flow: CallFlow; transaction: T
                 if (await flow.actions.submitDispute(form)) setReviewing(false);
               }}
             >
-              {flow.submitting ? <Spinner className="size-3" /> : <ShieldCheck className="size-3.5" />}
+              {flow.submitting ? <Spinner className="size-3.5" /> : <ShieldCheck className="size-4" />}
               Approve
             </Button>
           </DialogFooter>
@@ -537,10 +535,10 @@ function CaseCreatedCard({ flow }: { flow: CallFlow }) {
   return (
     <SectionCard className="border-success/30">
       <div className="flex items-center gap-2">
-        <CircleCheck className="size-4 text-success" />
+        <CircleCheck className="size-5 text-success" />
         <div>
-          <div className="font-mono text-[14px] font-semibold tracking-tight">{c.reference}</div>
-          <div className="text-[11px] text-muted-foreground">
+          <div className="font-mono text-[15px] font-semibold tracking-tight">{c.reference}</div>
+          <div className="text-[13px] text-muted-foreground">
             {usd(c.amount)} · {c.merchant}
           </div>
         </div>
@@ -562,7 +560,7 @@ function CaseCreatedCard({ flow }: { flow: CallFlow }) {
         <Tooltip>
           <TooltipTrigger asChild>
             <Button className="mt-3 w-full gap-1.5" size="sm" onClick={flow.actions.startWrapUp}>
-              Wrap up <ArrowRight className="size-3" />
+              Wrap up <ArrowRight className="size-3.5" />
             </Button>
           </TooltipTrigger>
           <TooltipContent>
@@ -581,9 +579,9 @@ function NotEligibleCard({ flow }: { flow: CallFlow }) {
   return (
     <>
       <Alert variant="warning" className="py-2">
-        <FolderOpen className="size-3.5" />
-        <AlertTitle className="text-[12px]">{existing ? `Case ${existing.reference} open` : "Not eligible"}</AlertTitle>
-        <AlertDescription className="text-[11px]">
+        <FolderOpen className="size-4" />
+        <AlertTitle className="text-[13px]">{existing ? `Case ${existing.reference} open` : "Not eligible"}</AlertTitle>
+        <AlertDescription className="text-[13px]">
           {existing
             ? `Opened for ${usd(existing.amount)} ${existing.merchant}`
             : eligibility.checks.find((c) => !c.passed)?.detail}
@@ -592,8 +590,8 @@ function NotEligibleCard({ flow }: { flow: CallFlow }) {
 
       {recommendation?.ok && (
         <SectionCard ai>
-          <AiLabel className="mb-2 text-[11px]">What to do</AiLabel>
-          <ul className="space-y-2 text-[11px]">
+          <AiLabel className="mb-2 text-[13px]">What to do</AiLabel>
+          <ul className="space-y-2 text-[13px]">
             {recommendation.data.steps.map((s, i) => (
               <li key={i} className="space-y-1">
                 <p className="leading-relaxed">{s.text}</p>
@@ -609,7 +607,7 @@ function NotEligibleCard({ flow }: { flow: CallFlow }) {
 
       {!flow.wrapUpRequested && (
         <Button className="w-full gap-1.5" size="sm" onClick={flow.actions.startWrapUp}>
-          Wrap up <ArrowRight className="size-3" />
+          Wrap up <ArrowRight className="size-3.5" />
         </Button>
       )}
     </>
@@ -626,17 +624,17 @@ function WrapUpCard({ flow }: { flow: CallFlow }) {
       <div className="mb-2 flex items-center justify-between">
         <Eyebrow>Wrap-up notes</Eyebrow>
         {draft?.ok && (
-          <Badge variant="ai" className="h-4 text-[9px]">
-            <Sparkles className="size-2.5" /> Draft
+          <Badge variant="ai" className="h-5 text-[11px]">
+            <Sparkles className="size-3" /> Draft
           </Badge>
         )}
       </div>
 
       {!draft ? (
-        <div className="space-y-1.5">
-          <Skeleton className="h-3 w-full" />
-          <Skeleton className="h-3 w-11/12" />
-          <Skeleton className="h-3 w-3/4" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-11/12" />
+          <Skeleton className="h-4 w-3/4" />
         </div>
       ) : (
         <Textarea
@@ -644,17 +642,17 @@ function WrapUpCard({ flow }: { flow: CallFlow }) {
           rows={5}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          className="text-[12px] leading-relaxed"
+          className="text-[13px] leading-relaxed"
         />
       )}
 
       {draft?.ok && draft.data.followUps.length > 0 && (
         <div className="mt-2 space-y-1">
-          <Eyebrow className="text-[9px]">Follow-ups</Eyebrow>
-          <ul className="space-y-0.5 text-[11px]">
+          <Eyebrow>Follow-ups</Eyebrow>
+          <ul className="space-y-1 text-[13px]">
             {draft.data.followUps.map((f, i) => (
               <li key={i} className="flex gap-1.5">
-                <span className="mt-1.5 size-1 shrink-0 rounded-full bg-muted-foreground/50" />
+                <span className="mt-2 size-1 shrink-0 rounded-full bg-muted-foreground/50" />
                 {f}
               </li>
             ))}
@@ -672,7 +670,7 @@ function WrapUpCard({ flow }: { flow: CallFlow }) {
           setSaving(false);
         }}
       >
-        {saving ? <Spinner className="size-3" /> : <PhoneOff className="size-3.5" />}
+        {saving ? <Spinner className="size-3.5" /> : <PhoneOff className="size-4" />}
         Save & end call
       </Button>
     </SectionCard>
@@ -683,11 +681,11 @@ function DoneCard({ flow }: { flow: CallFlow }) {
   const existing = flow.confirmed?.eligibility.existingCase;
   return (
     <SectionCard className="border-success/30 text-center">
-      <div className="mx-auto mb-2 flex size-8 items-center justify-center rounded-full bg-success-soft">
-        <CircleCheck className="size-4 text-success" />
+      <div className="mx-auto mb-2 flex size-9 items-center justify-center rounded-full bg-success-soft">
+        <CircleCheck className="size-5 text-success" />
       </div>
-      <div className="text-[13px] font-semibold">Call complete</div>
-      <p className="mt-1 text-[11px] text-muted-foreground">
+      <div className="text-[14px] font-semibold">Call complete</div>
+      <p className="mt-1 text-[13px] text-muted-foreground">
         {flow.createdCase
           ? `Case ${flow.createdCase.reference} created.`
           : existing
@@ -695,7 +693,7 @@ function DoneCard({ flow }: { flow: CallFlow }) {
             : "Notes saved."}
       </p>
       <Button className="mt-3 w-full gap-1.5" size="sm" onClick={flow.actions.newCall}>
-        Next call <ArrowRight className="size-3" />
+        Next call <ArrowRight className="size-3.5" />
       </Button>
     </SectionCard>
   );
